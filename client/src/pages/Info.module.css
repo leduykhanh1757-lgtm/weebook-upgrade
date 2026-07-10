@@ -1,0 +1,88 @@
+.infoPage {
+  padding: 40px 0;
+}
+
+.infoLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 30px;
+}
+
+.infoSidebar {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  height: fit-content;
+  border: 1px solid var(--border-color);
+}
+
+.infoSidebar h3 {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.infoSidebar ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.infoSidebar a {
+  display: block;
+  padding: 10px 15px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-main);
+  transition: all var(--transition-fast);
+}
+
+.infoSidebar a:hover,
+.infoSidebar a.active {
+  background: var(--bg-main);
+  color: var(--primary-color);
+  font-weight: 600;
+  border-left: 3px solid var(--primary-color);
+}
+
+.infoCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 40px;
+  border: 1px solid var(--border-color);
+}
+
+.infoCard h1 {
+  color: var(--primary-color);
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+}
+
+.infoContent {
+  color: var(--text-main);
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.infoContent p {
+  margin-bottom: 15px;
+}
+
+.infoContent ul, .infoContent ol {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+
+.infoContent li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .infoLayout {
+    grid-template-columns: 1fr;
+  }
+}

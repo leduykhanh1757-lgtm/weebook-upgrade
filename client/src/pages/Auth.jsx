@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, registerUser } from '../store/authSlice';
 import { useNavigate } from 'react-router-dom';
+import styles from './Auth.module.css';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -34,41 +35,43 @@ const Auth = () => {
   };
 
   return (
-    <div className="container auth-page">
-      <div className="auth-container">
-        <div className="auth-tabs">
-          <button className={`tab-btn ${isLogin ? 'active' : ''}`} onClick={() => setIsLogin(true)}>Đăng nhập</button>
-          <button className={`tab-btn ${!isLogin ? 'active' : ''}`} onClick={() => setIsLogin(false)}>Đăng ký</button>
+    <div className={`container ${styles.authPage}`}>
+      <div className={styles.authContainer}>
+        <div className={styles.authTabs}>
+          <button className={`${styles.tabBtn} ${isLogin ? styles.active : ''}`} onClick={() => setIsLogin(true)}>Đăng nhập</button>
+          <button className={`${styles.tabBtn} ${!isLogin ? styles.active : ''}`} onClick={() => setIsLogin(false)}>Đăng ký</button>
         </div>
-        {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-        <form className="auth-form active" onSubmit={handleSubmit}>
+        
+        <form className={styles.authForm} onSubmit={handleSubmit}>
+          {error && <div style={{ color: 'white', background: 'var(--danger-color)', padding: '10px', borderRadius: '6px', fontSize: '0.9rem' }}>{error}</div>}
+          
           {!isLogin && (
             <>
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label>Họ và tên *</label>
                 <input type="text" name="name" onChange={handleChange} required />
               </div>
-              <div className="form-group">
+              <div className={styles.formGroup}>
                 <label>Số điện thoại *</label>
                 <input type="tel" name="phone" onChange={handleChange} required />
               </div>
             </>
           )}
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label>Email *</label>
             <input type="email" name="email" onChange={handleChange} required />
           </div>
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label>Mật khẩu *</label>
             <input type="password" name="password" onChange={handleChange} required />
           </div>
           {!isLogin && (
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Xác nhận mật khẩu *</label>
               <input type="password" name="confirmPassword" onChange={handleChange} required />
             </div>
           )}
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
             {loading ? 'Đang xử lý...' : (isLogin ? 'Đăng nhập' : 'Đăng ký')}
           </button>
         </form>

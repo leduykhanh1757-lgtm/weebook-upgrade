@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/cartSlice';
 import { wishlistAPI } from '../services/api';
+import styles from './ProductCard.module.css';
 
 const ProductCard = ({ book }) => {
   const dispatch = useDispatch();
@@ -10,19 +11,19 @@ const ProductCard = ({ book }) => {
   const [inWishlist, setInWishlist] = useState(false);
 
   useEffect(() => {
-    // Basic local check or rely on passed prop if wishlist is fetched in parent
     const localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
     setInWishlist(localWishlist.includes(book.id));
   }, [book.id]);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     dispatch(addToCart({ bookId: book.id, quantity: 1, book }));
-    // Optional: show a toast notification here
   };
 
   const handleToggleWishlist = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     try {
       if (isAuthenticated) {
         if (inWishlist) {
@@ -51,38 +52,46 @@ const ProductCard = ({ book }) => {
   };
 
   return (
-    <Link to={`/product/${book.id}`} className="product-card">
-      <div className="product-image">
-        <img src={book.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={book.title} loading="lazy" />
-        {book.discount > 0 && <span className="discount-badge">-{book.discount}%</span>}
-        {book.newRelease && <span className="new-badge">Mới</span>}
+    <Link to={`/product/${book.id}`} className={styles.card}>
+      <div className={styles.imageContainer}>
+        <img 
+          src={book.images?.[0] || '/src/assets/images/placeholder.jpg'} 
+          alt={book.title} 
+          loading="lazy" 
+          className={styles.image}
+        />
+        {book.discount > 0 && <span className={styles.discountBadge}>-{book.discount}%</span>}
+        {book.newRelease && <span className={styles.newBadge}>Mới</span>}
         
-        <div className="product-actions">
-          <button className={`action-btn wishlist-btn ${inWishlist ? 'active' : ''}`} onClick={handleToggleWishlist}>
+        <div className={styles.actions}>
+          <button 
+            className={`${styles.wishlistBtn} ${inWishlist ? styles.active : ''}`} 
+            onClick={handleToggleWishlist}
+            title={inWishlist ? "Bỏ yêu thích" : "Thêm yêu thích"}
+          >
             <i className={inWishlist ? "fas fa-heart" : "far fa-heart"}></i>
           </button>
         </div>
       </div>
-      <div className="product-info">
-        <h3 className="product-title">{book.title}</h3>
-        <p className="product-author">{book.author}</p>
-        <div className="product-rating">
+      <div className={styles.info}>
+        <h3 className={styles.title}>{book.title}</h3>
+        <p className={styles.author}>{book.author}</p>
+        <div className={styles.rating}>
           <div className="stars">
             {[1, 2, 3, 4, 5].map(star => (
-              <i key={star} className={`fas fa-star ${star <= Math.round(book.rating || 0) ? '' : 'empty'}`}></i>
+              <i key={star} className={`fas fa-star ${star <= Math.round(book.rating || 0) ? '' : 'empty'}`} style={{ color: star <= Math.round(book.rating || 0) ? '#F59E0B' : '#E2E8F0' }}></i>
             ))}
           </div>
-          <span className="rating-text">({book.reviewCount || 0})</span>
+          <span className={styles.ratingText}>({book.reviewCount || 0})</span>
         </div>
-        <div className="product-price">
-          <span className="current-price">{formatPrice(book.price)}</span>
+        <div className={styles.priceContainer}>
+          <span className={styles.currentPrice}>{formatPrice(book.price)}</span>
           {book.originalPrice > book.price && (
-            <span className="original-price">{formatPrice(book.originalPrice)}</span>
+            <span className={styles.originalPrice}>{formatPrice(book.originalPrice)}</span>
           )}
         </div>
-        <button className="btn btn-primary add-to-cart-btn" onClick={handleAddToCart}>
-          <i className="fas fa-shopping-cart"></i>
-          Thêm vào giỏ
+        <button className={`btn btn-primary ${styles.addToCartBtn}`} onClick={handleAddToCart}>
+          <i className="fas fa-shopping-cart"></i> Thêm vào giỏ
         </button>
       </div>
     </Link>

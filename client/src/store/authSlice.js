@@ -29,6 +29,19 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+export const updateProfileThunk = createAsyncThunk(
+  'auth/updateProfile',
+  async (profileData, { rejectWithValue }) => {
+    try {
+      const data = await authAPI.updateProfile(profileData);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      return data.user;
+    } catch (err) {
+      return rejectWithValue(err.response.data);
+    }
+  }
+);
+
 const userStr = localStorage.getItem('user');
 const initialState = {
   user: userStr ? JSON.parse(userStr) : null,
@@ -82,6 +95,9 @@ const authSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || 'Registration failed';
+      })
+      .addCase(updateProfileThunk.fulfilled, (state, action) => {
+        state.user = action.payload;
       });
   },
 });

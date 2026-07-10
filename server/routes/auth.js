@@ -108,7 +108,7 @@ router.put('/profile', requireAuth, (req, res) => {
         const db = getDb();
 
         db.prepare(
-            'UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, updated_at = datetime("now") WHERE id = ?'
+            `UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, updated_at = datetime('now') WHERE id = ?`
         ).run(name || req.user.name, phone || null, birthday || null, address || null, req.user.id);
 
         const updatedUser = db.prepare('SELECT id, name, email, phone, role, birthday, address FROM users WHERE id = ?').get(req.user.id);

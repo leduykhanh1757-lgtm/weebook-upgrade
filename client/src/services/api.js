@@ -30,6 +30,10 @@ export const authAPI = {
     const response = await apiClient.get('/auth/me');
     return response.data;
   },
+  updateProfile: async (profileData) => {
+    const response = await apiClient.put('/auth/profile', profileData);
+    return response.data;
+  },
 };
 
 export const booksAPI = {

@@ -1,19 +1,29 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { booksAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
+import styles from './Home.module.css';
 
 const Home = () => {
   const [featuredBooks, setFeaturedBooks] = useState([]);
   const [newReleases, setNewReleases] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Banner Slider Logic
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const banners = [
+    '/src/assets/images/banner1.jpg',
+    '/src/assets/images/banner2.jpg',
+    '/src/assets/images/banner3.jpg'
+  ];
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const featuredRes = await booksAPI.getBooks({ limit: 8, featured: true });
+        const featuredRes = await booksAPI.getBooks({ limit: 12, featured: true });
         setFeaturedBooks(featuredRes.books || []);
         
-        const newRes = await booksAPI.getBooks({ limit: 8, sort: 'newest' });
+        const newRes = await booksAPI.getBooks({ limit: 12, sort: 'newest' });
         setNewReleases(newRes.books || []);
       } catch (err) {
         console.error('Error fetching books for home page', err);
@@ -24,49 +34,61 @@ const Home = () => {
     fetchBooks();
   }, []);
 
+  // Auto-slide effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % banners.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
+
   return (
-    <>
-      <section className="main-content">
-        <div className="container">
-          <div className="content-layout">
-            <aside className="sidebar">
-              <div className="category-menu">
-                <h3 className="category-title">DANH MỤC SẢN PHẨM</h3>
-                <ul className="category-list">
-                  <li className="has-submenu category-item">
-                    <a href="/category?category=vietnamese"><i className="fa-solid fa-book"></i> Sách Tiếng Việt <i className="fa-solid fa-angle-right"></i></a>
-                  </li>
-                  <li className="has-submenu category-item">
-                    <a href="/category?category=foreign"><i className="fa-solid fa-book-open"></i> Sách Ngoại Văn <i className="fa-solid fa-angle-right"></i></a>
-                  </li>
-                  <li className="has-submenu category-item">
-                    <a href="/category?category=office-supplies"><i className="fa-solid fa-pen"></i> Văn Phòng Phẩm <i className="fa-solid fa-angle-right"></i></a>
-                  </li>
-                  <li className="has-submenu category-item">
-                    <a href="/category?category=comics"><i className="fa-solid fa-images"></i> Truyện Tranh <i className="fa-solid fa-angle-right"></i></a>
-                  </li>
-                </ul>
+    <div className={`container ${styles.homeContainer}`}>
+      <section className={styles.heroSection}>
+        <div className={styles.heroBanner}>
+          <div 
+            className={styles.slides}
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {banners.map((src, idx) => (
+              <div key={idx} className={styles.slide}>
+                <img src={src} alt={`Banner ${idx + 1}`} />
               </div>
-            </aside>
-            <div className="hero-section">
-              <div className="hero-banner">
-                <div className="slides">
-                  <img src="/src/assets/images/banner1.jpg" alt="Banner 1" />
-                </div>
-              </div>
-              <div className="hero-side">
-                <div className="voucher-container">
-                  <img src="/src/assets/images/small-bannerv2.jpg" alt="Voucher" />
-                </div>
-              </div>
-            </div>
+            ))}
+          </div>
+          <button className={`${styles.sliderBtn} ${styles.prev}`} onClick={prevSlide}>
+            <i className="fa-solid fa-chevron-left"></i>
+          </button>
+          <button className={`${styles.sliderBtn} ${styles.next}`} onClick={nextSlide}>
+            <i className="fa-solid fa-chevron-right"></i>
+          </button>
+          <div className={styles.sliderNav}>
+            {banners.map((_, idx) => (
+              <button 
+                key={idx} 
+                className={`${styles.sliderDot} ${currentSlide === idx ? styles.active : ''}`}
+                onClick={() => setCurrentSlide(idx)}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.heroSide}>
+          <div className={styles.voucherContainer}>
+            <img src="/src/assets/images/small-bannerv2.jpg" alt="Voucher" />
           </div>
         </div>
       </section>
 
-      <section className="product-showcase container featured-products">
-        <h2>SẢN PHẨM NỔI BẬT</h2>
-        <div className="product-grid">
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>SẢN PHẨM NỔI BẬT</h2>
+          <Link to="/category" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Xem tất cả &rarr;</Link>
+        </div>
+        <div className={styles.productGrid}>
           {loading ? (
             <div className="loading-placeholder"><p>Đang tải sản phẩm...</p></div>
           ) : (
@@ -75,9 +97,12 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="product-showcase container new-releases">
-        <h2>SÁCH MỚI PHÁT HÀNH</h2>
-        <div className="product-grid">
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h2 className={styles.sectionTitle} style={{ marginBottom: 0 }}>SÁCH MỚI PHÁT HÀNH</h2>
+          <Link to="/category" style={{ color: 'var(--primary-color)', fontWeight: '600' }}>Xem tất cả &rarr;</Link>
+        </div>
+        <div className={styles.productGrid}>
           {loading ? (
             <div className="loading-placeholder"><p>Đang tải sản phẩm...</p></div>
           ) : (
@@ -85,7 +110,7 @@ const Home = () => {
           )}
         </div>
       </section>
-    </>
+    </div>
   );
 };
 

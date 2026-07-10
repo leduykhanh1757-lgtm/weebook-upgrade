@@ -1,19 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import styles from './Footer.module.css';
 
 const Footer = () => {
   return (
-    <footer>
-      <div className="footer-main container">
-        <div className="footer-col about-us">
-          <img src="/src/assets/images/logo.png" alt="BookSelf Logo" className="footer-logo" />
+    <footer className={styles.footer}>
+      <div className={`container ${styles.footerMain}`}>
+        <div className={styles.aboutUs}>
+          <img src="/src/assets/images/logo.png" alt="BookSelf Logo" className={styles.footerLogo} />
           <p>Công ty cổ phần sách BookSelf</p>
           <p><strong>Bạn cần hỗ trợ? Gọi chúng tôi 24/7</strong></p>
-          <p className="phone-number">0912 913 914</p>
-          <p className="address-title">Thông tin địa chỉ</p>
-          <p className="address-detail">Số 125 Đường Trần Hưng Đạo, Phường Cầu Kho, Quận 1, TP. Hồ Chí Minh</p>
+          <p className={styles.phoneNumber}>0912 913 914</p>
+          <p><strong>Thông tin địa chỉ</strong></p>
+          <p>Số 125 Đường Trần Hưng Đạo, Phường Cầu Kho, Quận 1, TP. Hồ Chí Minh</p>
         </div>
-        <div className="footer-col">
+        
+        <div className={styles.footerCol}>
           <h3>Hỗ trợ</h3>
           <ul>
             <li><Link to="/info/huong-dan-mua-hang">Hướng dẫn mua hàng</Link></li>
@@ -22,7 +24,8 @@ const Footer = () => {
             <li><Link to="/info/dieu-khoan-dich-vu">Điều khoản dịch vụ</Link></li>
           </ul>
         </div>
-        <div className="footer-col">
+        
+        <div className={styles.footerCol}>
           <h3>Chính sách</h3>
           <ul>
             <li><Link to="/info/chinh-sach-bao-mat">Chính sách bảo mật</Link></li>
@@ -31,15 +34,16 @@ const Footer = () => {
             <li><Link to="/info/quy-dinh-su-dung">Quy định sử dụng</Link></li>
           </ul>
         </div>
-        <div className="footer-col newsletter">
+        
+        <div className={styles.footerCol}>
           <h3>Nhận tin khuyến mãi</h3>
-          <p>Hỗ trợ khách hàng 24/7</p>
-          <form className="newsletter-form" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Nhập email của bạn" />
+          <p style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Hỗ trợ khách hàng 24/7</p>
+          <form className={styles.newsletterForm} onSubmit={(e) => e.preventDefault()}>
+            <input type="email" placeholder="Nhập email của bạn" required />
             <button type="submit">Đăng ký</button>
           </form>
-          <p className="social-title">Theo dõi chúng tôi</p>
-          <div className="social-icons">
+          <p className={styles.socialTitle}>Theo dõi chúng tôi</p>
+          <div className={styles.socialIcons}>
             <a href="#"><i className="fab fa-facebook-f"></i></a>
             <a href="#"><i className="fab fa-youtube"></i></a>
             <a href="#"><i className="fab fa-instagram"></i></a>

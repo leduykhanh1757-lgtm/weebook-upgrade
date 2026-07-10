@@ -1,0 +1,96 @@
+.accountLayout {
+  padding: 40px 0;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.profileCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.cardHeader {
+  padding: 25px 30px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  margin-bottom: 5px;
+}
+
+.cardSubtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.cardBody {
+  padding: 30px;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.infoLabel {
+  width: 150px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: right;
+  padding-right: 30px;
+}
+
+.infoValue {
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+}
+
+.editInput {
+  flex: 1;
+  max-width: 400px;
+  padding: 10px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  background: white;
+}
+
+.editInput:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.actionRow {
+  padding-left: 150px;
+  margin-top: 30px;
+}
+
+@media (max-width: 900px) {
+  .accountLayout {
+    grid-template-columns: 1fr;
+  }
+  .infoRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .infoLabel {
+    text-align: left;
+    width: 100%;
+  }
+  .actionRow {
+    padding-left: 0;
+  }
+  .editInput {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,319 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 15px 0;
+  transition: all var(--transition-normal);
+}
+
+.headerMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.brandSection .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandSection img {
+  height: 45px;
+  width: auto;
+}
+
+.brandName {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: -0.5px;
+}
+
+.navLinks {
+  display: flex;
+  gap: 30px;
+}
+
+.navLinks a {
+  font-weight: 500;
+  color: var(--text-muted);
+  position: relative;
+  padding: 5px 0;
+}
+
+.navLinks a:hover {
+  color: var(--primary-color);
+}
+
+.navLinks a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background-color: var(--primary-color);
+  transition: width var(--transition-normal);
+  border-radius: 2px;
+}
+
+.navLinks a:hover::after {
+  width: 100%;
+}
+
+.searchContainer {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 30px;
+  position: relative;
+}
+
+.searchBar {
+  display: flex;
+  background: var(--bg-main);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.searchBar:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  padding: 12px 16px;
+  background: transparent;
+  outline: none;
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchBtn {
+  width: 50px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.searchBtn:hover {
+  background: var(--primary-dark);
+}
+
+.searchDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.searchDropdownMessage {
+  padding: 15px 20px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.searchResultsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.searchResultItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color var(--transition-fast);
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.searchResultItem:hover {
+  background-color: var(--bg-main);
+}
+
+.searchResultItem:last-child {
+  border-bottom: none;
+}
+
+.searchResultImage {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px;
+  background: white;
+}
+
+.searchResultInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.searchResultInfo h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchResultPrice {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--danger-color);
+}
+
+.searchViewAll {
+  display: block;
+  padding: 12px 15px;
+  text-align: center;
+  color: var(--primary-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  transition: background-color var(--transition-fast);
+}
+
+.searchViewAll:hover {
+  background: #f1f5f9;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.openingHours {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.openingHours i {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.accountMenu {
+  position: relative;
+}
+
+.actionIcon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-main);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.actionIcon:hover {
+  background-color: var(--bg-main);
+  color: var(--primary-color);
+}
+
+.accountDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-card);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  min-width: 220px;
+  padding: 10px 0;
+  margin-top: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all var(--transition-normal);
+}
+
+.accountDropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.accountDropdown a, .accountDropdown button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  width: 100%;
+  text-align: left;
+  color: var(--text-main);
+  font-size: 0.95rem;
+}
+
+.accountDropdown a:hover, .accountDropdown button:hover {
+  background-color: var(--bg-main);
+  color: var(--primary-color);
+}
+
+.cartIconWrapper {
+  position: relative;
+}
+
+.cartCount {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--danger-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+}

@@ -1,0 +1,133 @@
+.footer {
+  background-color: var(--bg-card);
+  padding: 20px 0 10px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 50px;
+}
+
+.footerMain {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 40px;
+}
+
+.footerLogo {
+  max-width: 100px;
+  margin-bottom: 10px;
+}
+
+.aboutUs p {
+  color: var(--text-muted);
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.phoneNumber {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color) !important;
+}
+
+.footerCol h3 {
+  font-size: 1.2rem;
+  margin-bottom: 25px;
+  color: var(--text-main);
+  position: relative;
+}
+
+.footerCol h3::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+}
+
+.footerCol ul {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footerCol a {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  transition: all var(--transition-fast);
+}
+
+.footerCol a:hover {
+  color: var(--primary-color);
+  padding-left: 5px;
+}
+
+.newsletterForm {
+  display: flex;
+  margin-top: 15px;
+  margin-bottom: 25px;
+}
+
+.newsletterForm input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-right: none;
+  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.newsletterForm button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0 20px;
+  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+  font-weight: 500;
+}
+
+.newsletterForm button:hover {
+  background-color: var(--primary-hover);
+}
+
+.socialTitle {
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.socialIcons {
+  display: flex;
+  gap: 15px;
+}
+
+.socialIcons a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-size: 1.1rem;
+  transition: all var(--transition-fast);
+}
+
+.socialIcons a:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-3px);
+}
+
+@media (max-width: 1024px) {
+  .footerMain {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .footerMain {
+    grid-template-columns: 1fr;
+  }
+}

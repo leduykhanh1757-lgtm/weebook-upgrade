@@ -1,0 +1,150 @@
+.homeContainer {
+  padding-bottom: 50px;
+}
+
+.heroSection {
+  display: grid;
+  grid-template-columns: 2.5fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+
+.heroBanner {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-md);
+  height: 400px;
+  background-color: #000;
+}
+
+.slides {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide {
+  min-width: 100%;
+  height: 100%;
+}
+
+.slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sliderNav {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.sliderDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.sliderDot.active {
+  background: white;
+  transform: scale(1.2);
+  width: 20px;
+  border-radius: 5px;
+}
+
+.sliderBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--text-main);
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.heroBanner:hover .sliderBtn {
+  opacity: 1;
+}
+
+.sliderBtn.prev { left: 15px; }
+.sliderBtn.next { right: 15px; }
+.sliderBtn:hover { background: white; color: var(--primary-color); }
+
+.heroSide {
+  height: 400px;
+}
+
+.voucherContainer {
+  height: 100%;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.voucherContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.voucherContainer:hover img {
+  transform: scale(1.05);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+  color: var(--text-main);
+  position: relative;
+  padding-left: 20px;
+}
+
+.sectionTitle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 5px;
+  background-color: var(--primary-color);
+  border-radius: 5px;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 25px;
+  margin-bottom: 60px;
+}
+
+@media (max-width: 1024px) {
+  .heroSection {
+    grid-template-columns: 1fr;
+  }
+  .heroSide {
+    display: none;
+  }
+}

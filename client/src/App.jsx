@@ -17,6 +17,8 @@ import Profile from './pages/Profile';
 import Orders from './pages/Orders';
 import OrderSuccess from './pages/OrderSuccess';
 
+import Info from './pages/Info';
+
 function App() {
   const dispatch = useDispatch();
 
@@ -38,6 +40,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/info/:slug" element={<Info />} />
         </Routes>
       </main>
       <Footer />

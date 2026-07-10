@@ -1,7 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { updateCartQuantity, removeFromCart } from '../store/cartSlice';
+import styles from './CartDropdown.module.css';
 
 const CartDropdown = ({ closeCart }) => {
   const { items: cartItems } = useSelector((state) => state.cart);
@@ -27,10 +28,14 @@ const CartDropdown = ({ closeCart }) => {
     navigate('/checkout');
   };
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);
+  };
+
   if (cartItems.length === 0) {
     return (
-      <div className="cart-dropdown active">
-        <div className="cart-empty">
+      <div className={styles.cartDropdown}>
+        <div className={styles.cartEmpty}>
           <i className="fas fa-shopping-cart"></i>
           <p>Giỏ hàng trống</p>
         </div>
@@ -39,36 +44,38 @@ const CartDropdown = ({ closeCart }) => {
   }
 
   const totalPrice = cartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+  const totalCount = cartItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
 
   return (
-    <div className="cart-dropdown active">
-      <div className="cart-header">
-        <h3>Giỏ hàng ({cartItems.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0)})</h3>
+    <div className={styles.cartDropdown}>
+      <div className={styles.cartHeader}>
+        <h3>Giỏ hàng ({totalCount})</h3>
       </div>
-      <div className="cart-items">
+      <div className={styles.cartItems}>
         {cartItems.map((item) => (
-          <div className="cart-item" key={item.book_id || item.id}>
+          <div className={styles.cartItem} key={item.book_id || item.id}>
             <img src={item.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={item.title} />
-            <div className="cart-item-info">
+            <div className={styles.itemInfo}>
               <h4>{item.title}</h4>
-              <p className="cart-item-price">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price || 0)}
-              </p>
-              <div className="cart-item-quantity">
-                <button className="quantity-btn minus" onClick={() => handleQuantityChange(item.book_id || item.id, item.quantity - 1)}>-</button>
-                <span>{item.quantity}</span>
-                <button className="quantity-btn plus" onClick={() => handleQuantityChange(item.book_id || item.id, item.quantity + 1)}>+</button>
+              <p className={styles.itemPrice}>{formatPrice(item.price)}</p>
+              <div className={styles.quantityControl}>
+                <button className={styles.qtyBtn} onClick={() => handleQuantityChange(item.book_id || item.id, item.quantity - 1)}>-</button>
+                <span style={{ fontSize: '0.9rem', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
+                <button className={styles.qtyBtn} onClick={() => handleQuantityChange(item.book_id || item.id, item.quantity + 1)}>+</button>
               </div>
             </div>
-            <button className="remove-item-btn" onClick={() => dispatch(removeFromCart(item.book_id || item.id))}>&times;</button>
+            <button className={styles.removeItem} onClick={() => dispatch(removeFromCart(item.book_id || item.id))}>&times;</button>
           </div>
         ))}
       </div>
-      <div className="cart-footer">
-        <div className="cart-total">
-          <strong>Tổng: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</strong>
+      <div className={styles.cartFooter}>
+        <div className={styles.cartTotal}>
+          <span>Tổng tiền:</span>
+          <strong>{formatPrice(totalPrice)}</strong>
         </div>
-        <button className="btn btn-primary checkout-btn" onClick={handleCheckout}>Thanh toán</button>
+        <button className={`btn btn-primary ${styles.checkoutBtn}`} onClick={handleCheckout}>
+          Thanh toán
+        </button>
       </div>
     </div>
   );

@@ -119,6 +119,25 @@ router.get('/new', (req, res) => {
     }
 });
 
+// GET /api/books/categories - Get distinct categories
+router.get('/categories', (req, res) => {
+    try {
+        const db = getDb();
+        const categories = db.prepare('SELECT DISTINCT category FROM books WHERE category IS NOT NULL ORDER BY category ASC').all();
+        
+        // Also get subcategories if needed, or group them
+        const subcategories = db.prepare('SELECT DISTINCT category, subcategory FROM books WHERE subcategory IS NOT NULL ORDER BY category, subcategory ASC').all();
+
+        res.json({
+            categories: categories.map(c => c.category),
+            subcategories: subcategories
+        });
+    } catch (err) {
+        console.error('Get categories error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
 // GET /api/books/:id
 router.get('/:id', (req, res) => {
     try {
