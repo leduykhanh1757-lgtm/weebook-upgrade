@@ -28,6 +28,11 @@ function initializeDatabase() {
             role TEXT DEFAULT 'user',
             birthday TEXT,
             address TEXT,
+            gender TEXT DEFAULT 'Khác',
+            avatar TEXT,
+            email_verified INTEGER DEFAULT 1,
+            phone_verified INTEGER DEFAULT 0,
+            newsletter_subscribed INTEGER DEFAULT 1,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         );
@@ -83,12 +88,14 @@ function initializeDatabase() {
 
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            order_code TEXT,
             user_id INTEGER NOT NULL,
             full_name TEXT NOT NULL,
             phone TEXT NOT NULL,
             email TEXT,
             city TEXT,
             district TEXT,
+            ward TEXT,
             address TEXT NOT NULL,
             delivery_method TEXT DEFAULT 'standard',
             payment_method TEXT DEFAULT 'cod',
@@ -118,13 +125,24 @@ function initializeDatabase() {
 
         CREATE TABLE IF NOT EXISTS reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            user_id INTEGER,
             book_id INTEGER NOT NULL,
             rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
             comment TEXT,
             created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
             FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS addresses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            receiver_name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            full_address TEXT NOT NULL,
+            is_default INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
         -- Indexes for performance
@@ -136,6 +154,7 @@ function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlist(user_id);
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
         CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
+        CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
     `);
 
     console.log('✅ Database initialized successfully');

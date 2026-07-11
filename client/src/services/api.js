@@ -34,6 +34,33 @@ export const authAPI = {
     const response = await apiClient.put('/auth/profile', profileData);
     return response.data;
   },
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await apiClient.put('/auth/password', { currentPassword, newPassword });
+    return response.data;
+  },
+  getAddresses: async () => {
+    const response = await apiClient.get('/auth/addresses');
+    return response.data.addresses;
+  },
+  addAddress: async (addressData) => {
+    const response = await apiClient.post('/auth/addresses', addressData);
+    return response.data;
+  },
+  updateAddress: async (id, addressData) => {
+    const response = await apiClient.put(`/auth/addresses/${id}`, addressData);
+    return response.data;
+  },
+  deleteAddress: async (id) => {
+    const response = await apiClient.delete(`/auth/addresses/${id}`);
+    return response.data;
+  },
+};
+
+export const usersAPI = {
+  getUserProfile: async (id) => {
+    const response = await apiClient.get(`/users/${id}`);
+    return response.data;
+  }
 };
 
 export const booksAPI = {
@@ -49,6 +76,14 @@ export const booksAPI = {
     const response = await apiClient.get('/books/categories');
     return response.data;
   },
+  getReviews: async (bookId) => {
+    const response = await apiClient.get(`/books/${bookId}/reviews`);
+    return response.data;
+  },
+  addReview: async (bookId, reviewData) => {
+    const response = await apiClient.post(`/books/${bookId}/reviews`, reviewData);
+    return response.data;
+  }
 };
 
 export const cartAPI = {
@@ -79,6 +114,10 @@ export const ordersAPI = {
     const response = await apiClient.post('/orders', orderData);
     return response.data;
   },
+  cancelOrder: async (orderId) => {
+    const response = await apiClient.put(`/orders/${orderId}/cancel`);
+    return response.data;
+  },
 };
 
 export const wishlistAPI = {
@@ -87,7 +126,7 @@ export const wishlistAPI = {
     return response.data;
   },
   addToWishlist: async (bookId) => {
-    const response = await apiClient.post('/wishlist', { bookId });
+    const response = await apiClient.post(`/wishlist/${bookId}`);
     return response.data;
   },
   removeFromWishlist: async (bookId) => {

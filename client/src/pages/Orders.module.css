@@ -33,6 +33,45 @@
   padding: 30px;
 }
 
+.tabsContainer {
+  display: flex;
+  gap: 30px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 25px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 10px 5px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--primary-color);
+}
+
+.tab.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--primary-color);
+}
+
 .emptyState {
   text-align: center;
   padding: 50px 0;

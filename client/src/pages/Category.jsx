@@ -16,6 +16,8 @@ const Category = () => {
   const category = searchParams.get('category');
   const subcategory = searchParams.get('subcategory');
   const search = searchParams.get('search');
+  const type = searchParams.get('type');
+  const sort = searchParams.get('sort') || 'default';
   const page = parseInt(searchParams.get('page') || '1');
 
   useEffect(() => {
@@ -36,7 +38,7 @@ const Category = () => {
     const fetchBooks = async () => {
       setLoading(true);
       try {
-        const res = await booksAPI.getBooks({ category, subcategory, search, page, limit: 16 });
+        const res = await booksAPI.getBooks({ category, subcategory, search, type, sort, page, limit: 16 });
         setBooks(res.books || []);
         if (res.pagination) {
           setPagination(res.pagination);
@@ -49,7 +51,7 @@ const Category = () => {
     };
     fetchBooks();
     window.scrollTo(0, 0);
-  }, [category, subcategory, search, page]);
+  }, [category, subcategory, search, type, sort, page]);
 
   const handlePageChange = (newPage) => {
     const params = new URLSearchParams(searchParams);
@@ -57,7 +59,44 @@ const Category = () => {
     navigate(`/category?${params.toString()}`);
   };
 
-  const currentCategoryName = search ? `Kết quả tìm kiếm cho: "${search}"` : (category || 'Tất cả sản phẩm');
+  const handleSortChange = (e) => {
+    const params = new URLSearchParams(searchParams);
+    if (e.target.value === 'default') {
+      params.delete('sort');
+    } else {
+      params.set('sort', e.target.value);
+    }
+    params.set('page', '1');
+    navigate(`/category?${params.toString()}`);
+  };
+
+  const translateCategory = (cat) => {
+    const dict = {
+      'comics': 'Truyện tranh',
+      'foreign': 'Sách ngoại văn',
+      'office-supplies': 'Văn phòng phẩm',
+      'toys': 'Đồ chơi',
+      'vietnamese': 'Sách tiếng Việt',
+      'Fiction': 'Tiểu thuyết',
+      'Non-Fiction': 'Phi hư cấu',
+      'Science': 'Khoa học',
+      'Technology': 'Công nghệ',
+      'Business': 'Kinh doanh',
+      'Self-Help': 'Kỹ năng sống',
+      'Romance': 'Ngôn tình',
+      'Children': 'Sách thiếu nhi',
+      'History': 'Lịch sử',
+      'Art': 'Nghệ thuật',
+      'Education': 'Giáo dục'
+    };
+    return dict[cat] || cat;
+  };
+
+  let currentCategoryName = 'Tất cả sản phẩm';
+  if (search) currentCategoryName = `Kết quả tìm kiếm cho: "${search}"`;
+  else if (type === 'featured') currentCategoryName = 'Sách Nổi Bật';
+  else if (type === 'new') currentCategoryName = 'Sách Mới Phát Hành';
+  else if (category) currentCategoryName = translateCategory(category);
 
   return (
     <div className={`container ${styles.categoryPage}`}>
@@ -78,7 +117,7 @@ const Category = () => {
                       to={`/category?category=${encodeURIComponent(cat)}`}
                       className={category === cat ? styles.active : ''}
                     >
-                      {cat}
+                      {translateCategory(cat)}
                     </Link>
                   </li>
                 ))
@@ -90,6 +129,16 @@ const Category = () => {
         <div className={styles.mainContentArea}>
           <div className={styles.categoryHeader}>
             <h1 style={{textTransform: 'capitalize'}}>{currentCategoryName}</h1>
+            <div className={styles.sortFilter}>
+              <label>Sắp xếp theo:</label>
+              <select className={styles.sortSelect} value={sort} onChange={handleSortChange}>
+                <option value="default">Phổ biến</option>
+                <option value="newest">Mới nhất</option>
+                <option value="price-low">Giá: Thấp đến cao</option>
+                <option value="price-high">Giá: Cao đến thấp</option>
+                <option value="rating">Đánh giá cao</option>
+              </select>
+            </div>
           </div>
           <div className={styles.productGrid}>
             {loading ? (

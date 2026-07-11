@@ -1,7 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { updateCartQuantity, removeFromCart } from '../store/cartSlice';
+import { toast } from 'react-hot-toast';
 import styles from './CartDropdown.module.css';
 
 const CartDropdown = ({ closeCart }) => {
@@ -21,7 +22,7 @@ const CartDropdown = ({ closeCart }) => {
   const handleCheckout = () => {
     closeCart();
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để thanh toán!');
+      toast.error('Vui lòng đăng nhập để thanh toán!');
       navigate('/auth');
       return;
     }
@@ -54,9 +55,13 @@ const CartDropdown = ({ closeCart }) => {
       <div className={styles.cartItems}>
         {cartItems.map((item) => (
           <div className={styles.cartItem} key={item.book_id || item.id}>
-            <img src={item.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={item.title} />
+            <Link to={`/product/${item.book_id || item.id}?qty=${item.quantity}`} onClick={closeCart} style={{ flexShrink: 0, textDecoration: 'none', color: 'inherit' }}>
+              <img src={item.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={item.title} />
+            </Link>
             <div className={styles.itemInfo}>
-              <h4>{item.title}</h4>
+              <Link to={`/product/${item.book_id || item.id}?qty=${item.quantity}`} onClick={closeCart} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h4 style={{ cursor: 'pointer' }} onMouseOver={(e) => e.target.style.color = 'var(--primary-color)'} onMouseOut={(e) => e.target.style.color = 'inherit'}>{item.title}</h4>
+              </Link>
               <p className={styles.itemPrice}>{formatPrice(item.price)}</p>
               <div className={styles.quantityControl}>
                 <button className={styles.qtyBtn} onClick={() => handleQuantityChange(item.book_id || item.id, item.quantity - 1)}>-</button>

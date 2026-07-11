@@ -51,17 +51,46 @@
   gap: 20px;
 }
 
+.categoryHeader h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
 .categoryHeader {
   background: var(--bg-card);
   padding: 20px;
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.categoryHeader h1 {
-  font-size: 1.5rem;
-  margin: 0;
+.sortFilter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sortFilter label {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.sortSelect {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  font-family: inherit;
+  color: var(--text-main);
+  background: white;
+  cursor: pointer;
+}
+
+.sortSelect:focus {
+  border-color: var(--primary-color);
 }
 
 .productGrid {

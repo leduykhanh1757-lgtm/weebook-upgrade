@@ -16,7 +16,7 @@
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-md);
   height: 400px;
-  background-color: #000;
+  background-color: #f8fafc;
 }
 
 .slides {
@@ -89,62 +89,305 @@
 .sliderBtn.next { right: 15px; }
 .sliderBtn:hover { background: white; color: var(--primary-color); }
 
-.heroSide {
+.heroSide, .voucherContainer {
+  display: none;
+}
+
+.heroSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   height: 400px;
 }
 
-.voucherContainer {
-  height: 100%;
+.sidebarBanner {
+  flex: 1;
   border-radius: var(--border-radius-md);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
+  background-color: #f78d2b; /* Match Halloween orange */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.voucherContainer img {
+.sidebarBanner img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.3s ease;
 }
 
-.voucherContainer:hover img {
+.sidebarBanner:hover img {
   transform: scale(1.05);
 }
 
-.sectionTitle {
+.sliderIndicators {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
-  font-size: 1.8rem;
-  color: var(--text-main);
-  position: relative;
-  padding-left: 20px;
+  gap: 10px;
 }
 
-.sectionTitle::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 10%;
-  height: 80%;
-  width: 5px;
-  background-color: var(--primary-color);
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.indicator.active {
+  background: white;
+  transform: scale(1.2);
+  width: 25px;
   border-radius: 5px;
 }
 
-.productGrid {
+.bookSection {
+  margin-bottom: 50px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewAll {
+  color: var(--primary-color);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.viewAll:hover {
+  text-decoration: underline;
+}
+
+.bookGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 25px;
-  margin-bottom: 60px;
+}
+
+.promoBannerFull {
+  margin-bottom: 40px;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background: linear-gradient(135deg, #064e3b 0%, #115e59 100%);
+  color: white;
+  padding: 30px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 30px -10px rgba(6, 78, 59, 0.4);
+  position: relative;
+}
+
+.promoBannerFull::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 50%;
+  height: 150%;
+  background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.promoBannerFull::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  right: -5%;
+  width: 60%;
+  height: 120%;
+  background: radial-gradient(circle at center, rgba(20, 184, 166, 0.15) 0%, transparent 70%);
+  filter: blur(50px);
+  pointer-events: none;
+}
+
+.promoBannerInner {
+  position: relative;
+  z-index: 10;
+  max-width: 450px;
+  text-align: left;
+}
+
+.promoBannerInner h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+.promoBannerInner p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  color: #a7f3d0;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.ctaBtn {
+  display: inline-block;
+  background: #fdfbf7;
+  color: #064e3b;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+}
+
+.ctaBtn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  color: #064e3b;
+}
+
+.promoMiddleFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 10;
+  padding-left: 30px;
+  border-left: 1px solid rgba(255,255,255,0.15);
+}
+
+.promoFeatureItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.promoFeatureIcon {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #a7f3d0;
+  backdrop-filter: blur(4px);
+}
+
+.promoFeatureText {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.promoFeatureText strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.promoFeatureText span {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  color: #a7f3d0;
+}
+
+.promoGraphic {
+  position: relative;
+  z-index: 10;
+  width: 240px;
+  height: 240px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.promoGraphic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@media (max-width: 768px) {
+  .promoBannerFull {
+    flex-direction: column-reverse;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 20px;
+  }
+  .promoBannerInner {
+    text-align: center;
+    max-width: 100%;
+  }
+  .promoBannerInner h3 {
+    font-size: 1.8rem;
+  }
+  .promoMiddleFeatures {
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-left: 0;
+    padding-top: 20px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+  }
+  .promoFeatureItem {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .promoFeatureText {
+    text-align: center;
+  }
+  .promoGraphic {
+    width: 200px;
+    height: 200px;
+  }
 }
 
 @media (max-width: 1024px) {
   .heroSection {
     grid-template-columns: 1fr;
   }
-  .heroSide {
+  .heroSidebar {
     display: none;
   }
 }

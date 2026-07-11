@@ -82,7 +82,7 @@ const ProductCard = ({ book }) => {
               <i key={star} className={`fas fa-star ${star <= Math.round(book.rating || 0) ? '' : 'empty'}`} style={{ color: star <= Math.round(book.rating || 0) ? '#F59E0B' : '#E2E8F0' }}></i>
             ))}
           </div>
-          <span className={styles.ratingText}>({book.reviewCount || 0})</span>
+          <span className={styles.ratingText}>({book.review_count || 0})</span>
         </div>
         <div className={styles.priceContainer}>
           <span className={styles.currentPrice}>{formatPrice(book.price)}</span>

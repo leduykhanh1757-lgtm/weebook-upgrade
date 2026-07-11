@@ -87,7 +87,12 @@ router.post('/login', (req, res) => {
                 phone: user.phone,
                 role: user.role,
                 birthday: user.birthday,
-                address: user.address
+                address: user.address,
+                gender: user.gender,
+                avatar: user.avatar,
+                email_verified: user.email_verified,
+                phone_verified: user.phone_verified,
+                newsletter_subscribed: user.newsletter_subscribed
             }
         });
     } catch (err) {
@@ -104,14 +109,23 @@ router.get('/me', requireAuth, (req, res) => {
 // PUT /api/auth/profile
 router.put('/profile', requireAuth, (req, res) => {
     try {
-        const { name, phone, birthday, address } = req.body;
+        const { name, phone, birthday, address, gender, avatar, newsletter_subscribed } = req.body;
         const db = getDb();
 
         db.prepare(
-            `UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, updated_at = datetime('now') WHERE id = ?`
-        ).run(name || req.user.name, phone || null, birthday || null, address || null, req.user.id);
+            `UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, gender = ?, avatar = ?, newsletter_subscribed = ?, updated_at = datetime('now') WHERE id = ?`
+        ).run(
+            name || req.user.name, 
+            phone || null, 
+            birthday || null, 
+            address || null, 
+            gender || req.user.gender || 'Khác',
+            avatar !== undefined ? avatar : req.user.avatar,
+            newsletter_subscribed !== undefined ? newsletter_subscribed : req.user.newsletter_subscribed,
+            req.user.id
+        );
 
-        const updatedUser = db.prepare('SELECT id, name, email, phone, role, birthday, address FROM users WHERE id = ?').get(req.user.id);
+        const updatedUser = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(req.user.id);
 
         res.json({ message: 'Cập nhật thông tin thành công!', user: updatedUser });
     } catch (err) {
@@ -146,6 +160,99 @@ router.put('/password', requireAuth, (req, res) => {
         res.json({ message: 'Đổi mật khẩu thành công!' });
     } catch (err) {
         console.error('Password change error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// GET /api/auth/addresses
+router.get('/addresses', requireAuth, (req, res) => {
+    try {
+        const db = getDb();
+        const addresses = db.prepare('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC').all(req.user.id);
+        res.json({ addresses });
+    } catch (err) {
+        console.error('Get addresses error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// POST /api/auth/addresses
+router.post('/addresses', requireAuth, (req, res) => {
+    try {
+        const { receiver_name, phone, full_address, is_default } = req.body;
+        if (!receiver_name || !phone || !full_address) {
+            return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin!' });
+        }
+        
+        const db = getDb();
+        
+        // If this is the first address or is_default is true, set others to not default
+        const existing = db.prepare('SELECT COUNT(*) as count FROM addresses WHERE user_id = ?').get(req.user.id);
+        const shouldBeDefault = (is_default === 1 || existing.count === 0) ? 1 : 0;
+        
+        if (shouldBeDefault === 1) {
+            db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(req.user.id);
+        }
+
+        const stmt = db.prepare('INSERT INTO addresses (user_id, receiver_name, phone, full_address, is_default) VALUES (?, ?, ?, ?, ?)');
+        const result = stmt.run(req.user.id, receiver_name, phone, full_address, shouldBeDefault);
+        
+        const newAddress = db.prepare('SELECT * FROM addresses WHERE id = ?').get(result.lastInsertRowid);
+        res.status(201).json({ message: 'Thêm địa chỉ thành công', address: newAddress });
+    } catch (err) {
+        console.error('Add address error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// PUT /api/auth/addresses/:id
+router.put('/addresses/:id', requireAuth, (req, res) => {
+    try {
+        const { receiver_name, phone, full_address, is_default } = req.body;
+        const addressId = req.params.id;
+        
+        const db = getDb();
+        
+        // Ensure address belongs to user
+        const address = db.prepare('SELECT * FROM addresses WHERE id = ? AND user_id = ?').get(addressId, req.user.id);
+        if (!address) return res.status(404).json({ error: 'Không tìm thấy địa chỉ' });
+
+        if (is_default === 1) {
+            db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(req.user.id);
+        }
+
+        const stmt = db.prepare('UPDATE addresses SET receiver_name = ?, phone = ?, full_address = ?, is_default = ? WHERE id = ?');
+        stmt.run(receiver_name || address.receiver_name, phone || address.phone, full_address || address.full_address, is_default !== undefined ? is_default : address.is_default, addressId);
+        
+        res.json({ message: 'Cập nhật địa chỉ thành công' });
+    } catch (err) {
+        console.error('Update address error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// DELETE /api/auth/addresses/:id
+router.delete('/addresses/:id', requireAuth, (req, res) => {
+    try {
+        const addressId = req.params.id;
+        const db = getDb();
+        
+        const address = db.prepare('SELECT * FROM addresses WHERE id = ? AND user_id = ?').get(addressId, req.user.id);
+        if (!address) return res.status(404).json({ error: 'Không tìm thấy địa chỉ' });
+
+        db.prepare('DELETE FROM addresses WHERE id = ?').run(addressId);
+        
+        // If deleted was default, make the most recent one default
+        if (address.is_default === 1) {
+            const nextAddress = db.prepare('SELECT id FROM addresses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id);
+            if (nextAddress) {
+                db.prepare('UPDATE addresses SET is_default = 1 WHERE id = ?').run(nextAddress.id);
+            }
+        }
+        
+        res.json({ message: 'Xóa địa chỉ thành công' });
+    } catch (err) {
+        console.error('Delete address error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
     }
 });

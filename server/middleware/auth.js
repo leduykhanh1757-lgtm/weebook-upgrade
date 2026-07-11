@@ -27,7 +27,7 @@ function requireAuth(req, res, next) {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         const db = getDb();
-        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address FROM users WHERE id = ?').get(decoded.id);
+        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(decoded.id);
 
         if (!user) {
             return res.status(401).json({ error: 'Người dùng không tồn tại!' });
@@ -54,7 +54,7 @@ function optionalAuth(req, res, next) {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         const db = getDb();
-        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address FROM users WHERE id = ?').get(decoded.id);
+        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(decoded.id);
         req.user = user || null;
     } catch (err) {
         req.user = null;

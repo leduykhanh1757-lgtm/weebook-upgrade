@@ -213,4 +213,65 @@ function parseBookRow(book) {
     };
 }
 
+// GET /api/books/:id/reviews
+router.get('/:id/reviews', (req, res) => {
+    try {
+        const db = getDb();
+        const bookId = parseInt(req.params.id);
+        const reviews = db.prepare(`
+            SELECT r.*, u.name as user_name, u.avatar as user_avatar
+            FROM reviews r 
+            LEFT JOIN users u ON r.user_id = u.id 
+            WHERE r.book_id = ? 
+            ORDER BY r.created_at DESC
+        `).all(bookId);
+
+        const formattedReviews = reviews.map(r => ({
+            id: r.id,
+            userId: r.user_id,
+            user: r.user_name || 'Khách',
+            avatar: r.user_avatar || null,
+            rating: r.rating,
+            comment: r.comment,
+            date: new Date(r.created_at).toLocaleDateString('vi-VN')
+        }));
+
+        res.json({ reviews: formattedReviews });
+    } catch (err) {
+        console.error('Get reviews error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+const { optionalAuth } = require('../middleware/auth');
+
+// POST /api/books/:id/reviews
+router.post('/:id/reviews', optionalAuth, (req, res) => {
+    try {
+        const db = getDb();
+        const bookId = parseInt(req.params.id);
+        const { rating, comment } = req.body;
+        const userId = req.user ? req.user.id : null;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Đánh giá từ 1 đến 5 sao' });
+        }
+
+        const addReviewTx = db.transaction(() => {
+            db.prepare('INSERT INTO reviews (user_id, book_id, rating, comment) VALUES (?, ?, ?, ?)').run(userId, bookId, rating, comment);
+            
+            const stats = db.prepare('SELECT AVG(rating) as avg, COUNT(*) as count FROM reviews WHERE book_id = ?').get(bookId);
+            
+            db.prepare('UPDATE books SET rating = ?, review_count = ? WHERE id = ?').run(stats.avg || 0, stats.count, bookId);
+        });
+
+        addReviewTx();
+
+        res.json({ success: true, message: 'Đã thêm đánh giá' });
+    } catch (err) {
+        console.error('Add review error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
 module.exports = router;

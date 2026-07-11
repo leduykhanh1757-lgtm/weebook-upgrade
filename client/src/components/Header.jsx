@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
 import { booksAPI } from '../services/api';
 import CartDropdown from './CartDropdown';
+import ConfirmModal from './ConfirmModal';
+import { toast } from 'react-hot-toast';
 import styles from './Header.module.css';
 
 const Header = () => {
@@ -14,6 +16,7 @@ const Header = () => {
   
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   
   const accountRef = useRef(null);
   const cartRef = useRef(null);
@@ -21,9 +24,15 @@ const Header = () => {
   const cartItemCount = cartItems.reduce((acc, item) => acc + (parseInt(item.quantity) || 0), 0);
 
   const handleLogout = () => {
-    dispatch(logout());
+    setIsLogoutModalOpen(true);
     setIsAccountOpen(false);
+  };
+
+  const executeLogout = () => {
+    dispatch(logout());
+    setIsLogoutModalOpen(false);
     navigate('/');
+    toast.success('Đăng xuất thành công!');
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -165,7 +174,11 @@ const Header = () => {
                   className={styles.actionIcon} 
                   onClick={() => setIsAccountOpen(!isAccountOpen)}
                 >
-                  <i className="fa-regular fa-user"></i> 
+                  {user && user.avatar ? (
+                    <img src={user.avatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <i className="fa-regular fa-user"></i> 
+                  )}
                   <span>{user ? user.name.split(' ')[0] : 'Tài khoản'}</span> 
                   <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.8em' }}></i>
                 </button>
@@ -173,8 +186,8 @@ const Header = () => {
                   {isAuthenticated ? (
                     <>
                       <Link to="/profile" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-user"></i> Hồ sơ cá nhân</Link>
-                      <Link to="/profile#wishlist" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-heart"></i> Đã yêu thích</Link>
-                      <Link to="/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Lịch sử mua hàng</Link>
+                      <Link to="/wishlist" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-heart"></i> Đã yêu thích</Link>
+                      <Link to="/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Quản lý đơn hàng</Link>
                       <button onClick={handleLogout}><i className="fa-solid fa-sign-out-alt"></i> Đăng xuất</button>
                     </>
                   ) : (
@@ -200,6 +213,16 @@ const Header = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={isLogoutModalOpen}
+        title="Đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?"
+        confirmText="Đăng xuất"
+        cancelText="Không"
+        onConfirm={executeLogout}
+        onCancel={() => setIsLogoutModalOpen(false)}
+      />
     </header>
   );
 };

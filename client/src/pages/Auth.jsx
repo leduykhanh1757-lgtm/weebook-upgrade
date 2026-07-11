@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, registerUser } from '../store/authSlice';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import styles from './Auth.module.css';
 
 const Auth = () => {
@@ -24,7 +25,7 @@ const Auth = () => {
       }
     } else {
       if (formData.password !== formData.confirmPassword) {
-        alert('Mật khẩu xác nhận không khớp');
+        toast.error('Mật khẩu xác nhận không khớp');
         return;
       }
       const res = await dispatch(registerUser(formData));

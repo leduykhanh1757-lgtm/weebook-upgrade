@@ -1,0 +1,183 @@
+.accountLayout {
+  padding: 40px 0;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.profileCard {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.cardHeader {
+  padding: 25px 30px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  margin-bottom: 5px;
+}
+
+.cardSubtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.cardBody {
+  padding: 30px;
+}
+
+.addressList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.addressItem {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 20px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.addressItem.default {
+  border-color: var(--primary-color);
+  background: #f8fafc;
+}
+
+.addressHeader {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.receiverName {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.receiverPhone {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.defaultBadge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.addressText {
+  color: var(--text-main);
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.addressActions {
+  display: flex;
+  gap: 10px;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.actionBtn:hover {
+  text-decoration: underline;
+}
+
+.deleteBtn {
+  color: var(--danger-color);
+}
+
+/* Modal form styles */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: 30px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: var(--shadow-lg);
+}
+
+.modalContent h2 {
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+.formGroup {
+  margin-bottom: 15px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.formControl {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-family: inherit;
+}
+
+.formControl:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .accountLayout {
+    grid-template-columns: 1fr;
+  }
+}
