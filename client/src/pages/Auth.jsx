@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, registerUser } from '../store/authSlice';
+import { fetchCart } from '../store/cartSlice';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styles from './Auth.module.css';
@@ -21,6 +22,7 @@ const Auth = () => {
     if (isLogin) {
       const res = await dispatch(login({ email: formData.email, password: formData.password }));
       if (res.meta.requestStatus === 'fulfilled') {
+        dispatch(fetchCart());
         navigate('/');
       }
     } else {
@@ -30,6 +32,7 @@ const Auth = () => {
       }
       const res = await dispatch(registerUser(formData));
       if (res.meta.requestStatus === 'fulfilled') {
+        dispatch(fetchCart());
         navigate('/');
       }
     }

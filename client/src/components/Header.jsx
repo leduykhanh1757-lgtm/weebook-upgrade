@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
+import { clearCart } from '../store/cartSlice';
 import { booksAPI } from '../services/api';
 import CartDropdown from './CartDropdown';
 import ConfirmModal from './ConfirmModal';
@@ -30,6 +31,7 @@ const Header = () => {
 
   const executeLogout = () => {
     dispatch(logout());
+    dispatch(clearCart());
     setIsLogoutModalOpen(false);
     navigate('/');
     toast.success('Đăng xuất thành công!');
@@ -185,6 +187,11 @@ const Header = () => {
                 <div className={`${styles.accountDropdown} ${isAccountOpen ? styles.show : ''}`}>
                   {isAuthenticated ? (
                     <>
+                      {user?.role === 'admin' && (
+                        <Link to="/admin/dashboard" onClick={() => setIsAccountOpen(false)} style={{ color: '#0284c7', fontWeight: 500 }}>
+                          <i className="fa-solid fa-shield-halved"></i> Quản trị hệ thống
+                        </Link>
+                      )}
                       <Link to="/profile" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-user"></i> Hồ sơ cá nhân</Link>
                       <Link to="/wishlist" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-heart"></i> Đã yêu thích</Link>
                       <Link to="/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Quản lý đơn hàng</Link>

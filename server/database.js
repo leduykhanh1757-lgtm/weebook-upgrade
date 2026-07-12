@@ -33,6 +33,7 @@ function initializeDatabase() {
             email_verified INTEGER DEFAULT 1,
             phone_verified INTEGER DEFAULT 0,
             newsletter_subscribed INTEGER DEFAULT 1,
+            helpful_votes INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         );

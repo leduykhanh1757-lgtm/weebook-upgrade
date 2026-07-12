@@ -75,6 +75,190 @@
   border-top: 1px dashed var(--border-color);
 }
 
+.checkoutBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.addressCard {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  background: #f9fafb;
+}
+
+.addressHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.addressHeader strong {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.addressPhone {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.defaultBadge {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.addressBody {
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.changeBtn {
+  background: none;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.changeBtn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-main);
+}
+
+.closeModalBtn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.closeModalBtn:hover {
+  color: var(--danger-color);
+}
+
+.modalBody {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.addressListItem {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addressListItem:hover {
+  border-color: var(--primary-color);
+  background: #f8fafc;
+}
+
+.addressListItem.selected {
+  border-color: var(--primary-color);
+  background: #eff6ff;
+}
+
+.addressRadio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.addressListItem.selected .addressRadio {
+  border-color: var(--primary-color);
+}
+
+.addressListItem.selected .radioInner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary-color);
+}
+
+.addressItemContent {
+  flex: 1;
+}
+
+.addNewAddressBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--primary-color);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 10px 0;
+  justify-content: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.addNewAddressBtn:hover {
+  background: #f8fafc;
+  border-color: var(--primary-color);
+}
+
 .checkoutBtn {
   width: 100%;
   padding: 15px;

@@ -38,6 +38,10 @@ export const authAPI = {
     const response = await apiClient.put('/auth/password', { currentPassword, newPassword });
     return response.data;
   },
+  forgotPassword: async (email) => {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
   getAddresses: async () => {
     const response = await apiClient.get('/auth/addresses');
     return response.data.addresses;
@@ -91,18 +95,85 @@ export const cartAPI = {
     const response = await apiClient.get('/cart');
     return response.data;
   },
-  addToCart: async (bookId, quantity) => {
+  addToCart: async (bookId, quantity = 1) => {
     const response = await apiClient.post('/cart', { bookId, quantity });
     return response.data;
   },
   updateQuantity: async (bookId, quantity) => {
-    const response = await apiClient.put(`/cart/${bookId}`, { quantity });
+    const response = await apiClient.put('/cart', { bookId, quantity });
     return response.data;
   },
   removeFromCart: async (bookId) => {
     const response = await apiClient.delete(`/cart/${bookId}`);
     return response.data;
+  }
+};
+
+export const adminAPI = {
+  getDashboard: async () => {
+    const response = await apiClient.get('/admin/dashboard');
+    return response.data;
   },
+  getBooks: async () => {
+    const response = await apiClient.get('/admin/books');
+    return response.data.books;
+  },
+  addBook: async (bookData) => {
+    const response = await apiClient.post('/admin/books', bookData);
+    return response.data;
+  },
+  updateBook: async (id, bookData) => {
+    const response = await apiClient.put(`/admin/books/${id}`, bookData);
+    return response.data;
+  },
+  getOrders: async () => {
+    const response = await apiClient.get('/admin/orders');
+    return response.data.orders;
+  },
+  updateOrderStatus: async (id, status) => {
+    const response = await apiClient.put(`/admin/orders/${id}/status`, { status });
+    return response.data;
+  },
+  getCategories: async () => {
+    const response = await apiClient.get('/admin/categories');
+    return response.data.categories;
+  },
+  addCategory: async (data) => {
+    const response = await apiClient.post('/admin/categories', data);
+    return response.data;
+  },
+  updateCategory: async (id, data) => {
+    const response = await apiClient.put(`/admin/categories/${id}`, data);
+    return response.data;
+  },
+  deleteCategory: async (id) => {
+    const response = await apiClient.delete(`/admin/categories/${id}`);
+    return response.data;
+  },
+  getAuthors: async () => {
+    const response = await apiClient.get('/admin/authors');
+    return response.data.authors;
+  },
+  addAuthor: async (data) => {
+    const response = await apiClient.post('/admin/authors', data);
+    return response.data;
+  },
+  getPublishers: async () => {
+    const response = await apiClient.get('/admin/publishers');
+    return response.data.publishers;
+  },
+  addPublisher: async (data) => {
+    const response = await apiClient.post('/admin/publishers', data);
+    return response.data;
+  },
+  getReviews: async () => {
+    const response = await apiClient.get('/admin/reviews');
+    return response.data.reviews;
+  },
+  updateReviewStatus: async (id, status) => {
+    const response = await apiClient.put(`/admin/reviews/${id}/status`, { status });
+    return response.data;
+  }
 };
 
 export const ordersAPI = {

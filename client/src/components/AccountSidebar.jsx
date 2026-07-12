@@ -1,19 +1,20 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
+import ConfirmModal from './ConfirmModal';
 import styles from './AccountSidebar.module.css';
 
 const AccountSidebar = () => {
   const { user } = useSelector(state => state.auth);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   if (!user) return null;
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/');
+    window.location.href = '/';
   };
 
   return (
@@ -77,11 +78,21 @@ const AccountSidebar = () => {
         </div>
 
         <div className={styles.navGroup}>
-          <button onClick={handleLogout} className={`${styles.navItem} ${styles.logoutBtn}`}>
+          <button onClick={() => setShowLogoutModal(true)} className={`${styles.navItem} ${styles.logoutBtn}`}>
             <i className="fa-solid fa-arrow-right-from-bracket"></i> Đăng xuất
           </button>
         </div>
       </nav>
+
+      <ConfirmModal
+        isOpen={showLogoutModal}
+        title="Xác nhận đăng xuất"
+        message="Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?"
+        confirmText="Đăng xuất"
+        cancelText="Hủy"
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 };

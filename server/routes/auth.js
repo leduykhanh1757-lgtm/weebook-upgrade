@@ -155,11 +155,35 @@ router.put('/password', requireAuth, (req, res) => {
         }
 
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
-        db.prepare('UPDATE users SET password = ?, updated_at = datetime("now") WHERE id = ?').run(hashedPassword, req.user.id);
+        db.prepare("UPDATE users SET password = ?, updated_at = datetime('now') WHERE id = ?").run(hashedPassword, req.user.id);
 
         res.json({ message: 'Đổi mật khẩu thành công!' });
     } catch (err) {
         console.error('Password change error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Vui lòng nhập email!' });
+        }
+        
+        const db = getDb();
+        const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+        
+        if (!user) {
+            // To prevent email enumeration, we still return success or a generic message.
+            // But since this is a demo, we can just say success anyway.
+            return res.status(200).json({ message: 'Đã gửi hướng dẫn khôi phục qua email' });
+        }
+        
+        res.status(200).json({ message: 'Đã gửi hướng dẫn khôi phục qua email' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
     }
 });

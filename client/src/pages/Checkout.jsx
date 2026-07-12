@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ordersAPI } from '../services/api';
+import { ordersAPI, authAPI } from '../services/api';
 import { clearCart } from '../store/cartSlice';
 import { toast } from 'react-hot-toast';
 import styles from './Checkout.module.css';
 
 const Checkout = () => {
-  const { user } = useSelector(state => state.auth);
+  const { user, isAuthenticated } = useSelector(state => state.auth);
   const { items: cartItems } = useSelector(state => state.cart);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const buyNowItem = location.state?.buyNowItem;
   const items = buyNowItem ? [{...buyNowItem.book, quantity: buyNowItem.quantity, bookId: buyNowItem.bookId}] : cartItems;
+
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
@@ -39,16 +45,42 @@ const Checkout = () => {
       .catch(err => console.error("Error fetching provinces", err));
   }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      authAPI.getAddresses().then(data => {
+        setAddresses(data);
+        if (data && data.length > 0) {
+          setSelectedAddress(data[0]);
+        }
+        setLoadingAddresses(false);
+      }).catch(err => {
+        console.error("Error fetching addresses", err);
+        setLoadingAddresses(false);
+      });
+    } else {
+      setLoadingAddresses(false);
+    }
+  }, [isAuthenticated]);
+
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   let shipping = 35000;
-  if (formData.city === 'Thành phố Hà Nội' || formData.city === 'Thành phố Hồ Chí Minh') {
+  
+  // Calculate city for shipping fee
+  let calcCity = formData.city;
+  if (selectedAddress && !isAddingNew) {
+    if (selectedAddress.full_address.includes('Hà Nội')) calcCity = 'Thành phố Hà Nội';
+    else if (selectedAddress.full_address.includes('Hồ Chí Minh')) calcCity = 'Thành phố Hồ Chí Minh';
+    else calcCity = 'Other';
+  }
+
+  if (calcCity === 'Thành phố Hà Nội' || calcCity === 'Thành phố Hồ Chí Minh') {
     shipping = 20000;
   }
   if (subtotal >= 300000) {
     shipping = 0;
   }
-  if (!formData.city) {
+  if (!calcCity && !selectedAddress) {
     shipping = 0; // Chưa chọn tỉnh thì hiển thị 0 hoặc ẩn
   }
 
@@ -87,13 +119,44 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.district || !formData.ward) {
-      toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
-      return;
+    let payload = { payment: formData.payment, notes: formData.notes, shippingCost: shipping };
+    
+    if (selectedAddress && !isAddingNew) {
+      payload.fullName = selectedAddress.receiver_name;
+      payload.phone = selectedAddress.phone;
+      payload.address = selectedAddress.full_address;
+      payload.email = formData.email;
+    } else {
+      if (!formData.fullName || !formData.phone || !formData.address || !formData.city || !formData.district || !formData.ward) {
+        toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
+        return;
+      }
+      payload.fullName = formData.fullName;
+      payload.phone = formData.phone;
+      payload.email = formData.email;
+      payload.city = formData.city;
+      payload.district = formData.district;
+      payload.ward = formData.ward;
+      payload.address = formData.address;
+
+      // Automatically save new address for logged-in user
+      if (isAuthenticated) {
+        const fullAddrStr = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
+        try {
+          await authAPI.addAddress({
+            receiver_name: formData.fullName,
+            phone: formData.phone,
+            full_address: fullAddrStr,
+            is_default: addresses.length === 0 ? 1 : 0
+          });
+        } catch(err) {
+          console.error("Auto save address failed", err);
+        }
+      }
     }
+
     setLoading(true);
     try {
-      const payload = { ...formData, shippingCost: shipping };
       if (buyNowItem) {
         payload.buyNowItem = { bookId: buyNowItem.bookId, quantity: buyNowItem.quantity };
       }
@@ -121,50 +184,84 @@ const Checkout = () => {
     <div className={`container ${styles.checkoutPage}`}>
       <div className={styles.checkoutLayout}>
         <div className="checkout-form-section">
+          
           <div className={styles.checkoutCard}>
-            <h2>Thông tin giao hàng</h2>
-            <div className={styles.formGroup}>
-              <label>Họ và tên *</label>
-              <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h2 style={{ margin: 0 }}>Thông tin giao hàng</h2>
+              {addresses.length > 0 && !isAddingNew && selectedAddress && (
+                <button className={styles.changeBtn} onClick={() => setIsModalOpen(true)}>
+                  Thay đổi
+                </button>
+              )}
             </div>
-            <div className={styles.formGroup}>
-              <label>Số điện thoại *</label>
-              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
-            </div>
-            <div className={styles.formRow} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div className={styles.formGroup}>
-                <label>Tỉnh/Thành phố *</label>
-                <select onChange={handleProvinceChange} required defaultValue="">
-                  <option value="" disabled>Chọn Tỉnh/Thành phố</option>
-                  {provinces.map(p => (
-                    <option key={p.code} value={p.code}>{p.name}</option>
-                  ))}
-                </select>
+
+            {loadingAddresses ? (
+              <p>Đang tải địa chỉ...</p>
+            ) : selectedAddress && !isAddingNew ? (
+              <div className={styles.addressCard}>
+                <div className={styles.addressHeader}>
+                  <strong>{selectedAddress.receiver_name}</strong>
+                  <span className={styles.addressPhone}>{selectedAddress.phone}</span>
+                  {selectedAddress.is_default === 1 && (
+                    <span className={styles.defaultBadge}>Mặc định</span>
+                  )}
+                </div>
+                <div className={styles.addressBody}>
+                  {selectedAddress.full_address}
+                </div>
               </div>
-              <div className={styles.formGroup}>
-                <label>Quận/Huyện *</label>
-                <select onChange={handleDistrictChange} required disabled={districts.length === 0} defaultValue="">
-                  <option value="" disabled>Chọn Quận/Huyện</option>
-                  {districts.map(d => (
-                    <option key={d.code} value={d.code}>{d.name}</option>
-                  ))}
-                </select>
+            ) : (
+              <div className={styles.newAddressForm}>
+                {addresses.length > 0 && isAddingNew && (
+                  <button className="btn btn-secondary" style={{ marginBottom: '15px' }} onClick={() => setIsAddingNew(false)}>
+                    <i className="fa-solid fa-arrow-left"></i> Quay lại sổ địa chỉ
+                  </button>
+                )}
+                <div className={styles.formGroup}>
+                  <label>Họ và tên *</label>
+                  <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Số điện thoại *</label>
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
+                </div>
+                <div className={styles.formRow} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className={styles.formGroup}>
+                    <label>Tỉnh/Thành phố *</label>
+                    <select onChange={handleProvinceChange} required defaultValue="">
+                      <option value="" disabled>Chọn Tỉnh/Thành phố</option>
+                      {provinces.map(p => (
+                        <option key={p.code} value={p.code}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Quận/Huyện *</label>
+                    <select onChange={handleDistrictChange} required disabled={districts.length === 0} defaultValue="">
+                      <option value="" disabled>Chọn Quận/Huyện</option>
+                      {districts.map(d => (
+                        <option key={d.code} value={d.code}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Phường/Xã *</label>
+                  <select onChange={handleWardChange} required disabled={wards.length === 0} defaultValue="">
+                    <option value="" disabled>Chọn Phường/Xã</option>
+                    {wards.map(w => (
+                      <option key={w.code} value={w.code}>{w.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Địa chỉ cụ thể *</label>
+                  <input type="text" name="address" value={formData.address} onChange={handleChange} required placeholder="Số nhà, tên đường..." />
+                </div>
               </div>
-            </div>
-            <div className={styles.formGroup}>
-              <label>Phường/Xã *</label>
-              <select onChange={handleWardChange} required disabled={wards.length === 0} defaultValue="">
-                <option value="" disabled>Chọn Phường/Xã</option>
-                {wards.map(w => (
-                  <option key={w.code} value={w.code}>{w.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className={styles.formGroup}>
-              <label>Địa chỉ cụ thể *</label>
-              <input type="text" name="address" value={formData.address} onChange={handleChange} required placeholder="Số nhà, tên đường..." />
-            </div>
-            <div className={styles.formGroup}>
+            )}
+
+            <div className={styles.formGroup} style={{ marginTop: '20px' }}>
               <label>Ghi chú đơn hàng</label>
               <input type="text" name="notes" value={formData.notes} onChange={handleChange} placeholder="Ghi chú thêm về việc giao hàng" />
             </div>
@@ -206,7 +303,7 @@ const Checkout = () => {
               <p>
                 <span>Phí vận chuyển:</span> 
                 <span>
-                  {shipping === 0 ? (formData.city ? 'Miễn phí' : '0 đ') : formatPrice(shipping)}
+                  {shipping === 0 ? ((calcCity || selectedAddress) ? 'Miễn phí' : '0 đ') : formatPrice(shipping)}
                 </span>
               </p>
               <p><strong><span>Tổng cộng:</span> <span>{formatPrice(total)}</span></strong></p>
@@ -217,6 +314,57 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3>Chọn địa chỉ giao hàng</h3>
+              <button className={styles.closeModalBtn} onClick={() => setIsModalOpen(false)}>
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              {addresses.map(addr => (
+                <div 
+                  key={addr.id} 
+                  className={`${styles.addressListItem} ${selectedAddress?.id === addr.id ? styles.selected : ''}`}
+                  onClick={() => {
+                    setSelectedAddress(addr);
+                    setIsAddingNew(false);
+                    setIsModalOpen(false);
+                  }}
+                >
+                  <div className={styles.addressRadio}>
+                    <div className={styles.radioInner}></div>
+                  </div>
+                  <div className={styles.addressItemContent}>
+                    <div className={styles.addressHeader}>
+                      <strong>{addr.receiver_name}</strong>
+                      <span className={styles.addressPhone}>{addr.phone}</span>
+                      {addr.is_default === 1 && (
+                        <span className={styles.defaultBadge}>Mặc định</span>
+                      )}
+                    </div>
+                    <div className={styles.addressBody}>
+                      {addr.full_address}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div 
+                className={styles.addNewAddressBtn}
+                onClick={() => {
+                  setIsAddingNew(true);
+                  setIsModalOpen(false);
+                }}
+              >
+                <i className="fa-solid fa-plus"></i> Thêm địa chỉ mới
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
