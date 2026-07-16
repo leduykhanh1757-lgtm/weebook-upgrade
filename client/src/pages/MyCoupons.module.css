@@ -1,0 +1,193 @@
+.accountLayout {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.sidebarCol {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.mainCol {
+  flex-grow: 1;
+}
+
+.profileCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.cardSubtitle {
+  color: var(--light-text);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.cardBody {
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--light-text);
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--light-text);
+}
+
+.emptyState i {
+  font-size: 3rem;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.couponGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.couponCard {
+  display: flex;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.couponCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+
+.couponCard.personalCard {
+  border: 1px solid #fcd34d;
+  background: linear-gradient(to right, #fffbeb, #ffffff);
+}
+
+.couponLeft {
+  width: 110px;
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  border-right: 2px dashed #e5e7eb;
+  position: relative;
+}
+
+.personalCard .couponLeft {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-right: 2px dashed #fde68a;
+}
+
+.discountValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.couponBadge {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  background: rgba(255,255,255,0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.couponRight {
+  flex: 1;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.couponHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.codeText {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  border: 1px dashed #d1d5db;
+  padding: 0.2rem 0.5rem;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.copyBtn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.copyBtn:hover {
+  opacity: 0.9;
+}
+
+.personalCard .copyBtn {
+  background: #d97706;
+}
+
+.couponDetails p {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.9rem;
+  color: var(--light-text);
+}
+
+.couponDetails .expiry {
+  color: #ef4444;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .accountLayout {
+    flex-direction: column;
+  }
+  .sidebarCol {
+    width: 100%;
+  }
+}

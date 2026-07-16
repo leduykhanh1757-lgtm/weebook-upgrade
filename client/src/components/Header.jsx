@@ -187,14 +187,14 @@ const Header = () => {
                 <div className={`${styles.accountDropdown} ${isAccountOpen ? styles.show : ''}`}>
                   {isAuthenticated ? (
                     <>
-                      {user?.role === 'admin' && (
+                      {user?.role !== 'user' && (
                         <Link to="/admin/dashboard" onClick={() => setIsAccountOpen(false)} style={{ color: '#0284c7', fontWeight: 500 }}>
                           <i className="fa-solid fa-shield-halved"></i> Quản trị hệ thống
                         </Link>
                       )}
                       <Link to="/profile" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-user"></i> Hồ sơ cá nhân</Link>
                       <Link to="/wishlist" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-heart"></i> Đã yêu thích</Link>
-                      <Link to="/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Quản lý đơn hàng</Link>
+                      <Link to="/profile/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Quản lý đơn hàng</Link>
                       <button onClick={handleLogout}><i className="fa-solid fa-sign-out-alt"></i> Đăng xuất</button>
                     </>
                   ) : (

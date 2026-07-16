@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, registerUser } from '../store/authSlice';
 import { fetchCart } from '../store/cartSlice';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import styles from './Auth.module.css';
 
@@ -73,6 +73,13 @@ const Auth = () => {
             <div className={styles.formGroup}>
               <label>Xác nhận mật khẩu *</label>
               <input type="password" name="confirmPassword" onChange={handleChange} required />
+            </div>
+          )}
+          {isLogin && (
+            <div style={{ textAlign: 'right', marginTop: '-10px' }}>
+              <Link to="/forgot-password" style={{ fontSize: '0.9rem', color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 500 }}>
+                Quên mật khẩu?
+              </Link>
             </div>
           )}
           <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>

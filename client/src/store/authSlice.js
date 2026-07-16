@@ -10,7 +10,7 @@ export const login = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(data.user));
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.response.data);
+      return rejectWithValue(err.response?.data || { error: 'Lỗi mạng hoặc máy chủ' });
     }
   }
 );
@@ -24,7 +24,7 @@ export const registerUser = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(data.user));
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.response.data);
+      return rejectWithValue(err.response?.data || { error: 'Lỗi mạng hoặc máy chủ' });
     }
   }
 );
@@ -37,7 +37,7 @@ export const updateProfileThunk = createAsyncThunk(
       localStorage.setItem('user', JSON.stringify(data.user));
       return data.user;
     } catch (err) {
-      return rejectWithValue(err.response.data);
+      return rejectWithValue(err.response?.data || { error: 'Lỗi mạng hoặc máy chủ' });
     }
   }
 );
@@ -80,7 +80,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || 'Login failed';
+        state.error = action.payload?.error || action.payload?.message || 'Đăng nhập thất bại';
       })
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
@@ -94,7 +94,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || 'Registration failed';
+        state.error = action.payload?.error || action.payload?.message || 'Đăng ký thất bại';
       })
       .addCase(updateProfileThunk.fulfilled, (state, action) => {
         state.user = action.payload;

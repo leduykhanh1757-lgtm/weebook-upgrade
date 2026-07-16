@@ -63,12 +63,14 @@ function optionalAuth(req, res, next) {
     next();
 }
 
-// Admin-only middleware
-function requireAdmin(req, res, next) {
-    if (!req.user || req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Bạn không có quyền truy cập!' });
-    }
-    next();
+// Role-based access control middleware
+function requireRoles(roles) {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Bạn không có quyền truy cập chức năng này!' });
+        }
+        next();
+    };
 }
 
-module.exports = { generateToken, requireAuth, optionalAuth, requireAdmin, JWT_SECRET };
+module.exports = { generateToken, requireAuth, optionalAuth, requireRoles, JWT_SECRET };

@@ -11,7 +11,7 @@ const AdminLayout = () => {
   const { user } = useSelector(state => state.auth);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role === 'user') {
     return (
       <div className={styles.deniedWrapper}>
         <div className={styles.deniedBox}>
@@ -37,24 +37,36 @@ const AdminLayout = () => {
           <i className="fa-solid fa-book-open"></i> BookSelf <span>Admin</span>
         </div>
         <nav className={styles.navMenu}>
-          <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-chart-pie"></i> Tổng quan
-          </NavLink>
-          <NavLink to="/admin/catalog" className={({ isActive }) => window.location.pathname.includes('/admin/catalog') ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-book"></i> Quản lý Kho sách
-          </NavLink>
-          <NavLink to="/admin/orders" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-box-open"></i> Quản lý Đơn hàng
-          </NavLink>
-          <NavLink to="/admin/customers" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-users"></i> Quản lý Khách hàng
-          </NavLink>
-          <NavLink to="/admin/marketing" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-bullhorn"></i> Marketing
-          </NavLink>
-          <NavLink to="/admin/settings" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
-            <i className="fa-solid fa-gear"></i> Hệ thống & Cài đặt
-          </NavLink>
+          {['admin', 'inventory_manager', 'customer_service'].includes(user.role) && (
+            <NavLink to="/admin/dashboard" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-chart-pie"></i> Tổng quan
+            </NavLink>
+          )}
+          {['admin', 'inventory_manager'].includes(user.role) && (
+            <NavLink to="/admin/catalog" className={({ isActive }) => window.location.pathname.includes('/admin/catalog') ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-book"></i> Quản lý Kho sách
+            </NavLink>
+          )}
+          {['admin', 'customer_service'].includes(user.role) && (
+            <NavLink to="/admin/orders" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-box-open"></i> Quản lý Đơn hàng
+            </NavLink>
+          )}
+          {user.role === 'admin' && (
+            <NavLink to="/admin/customers" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-users"></i> Quản lý Khách hàng
+            </NavLink>
+          )}
+          {user.role === 'admin' && (
+            <NavLink to="/admin/marketing" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-bullhorn"></i> Marketing
+            </NavLink>
+          )}
+          {user.role === 'admin' && (
+            <NavLink to="/admin/settings" className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}>
+              <i className="fa-solid fa-gear"></i> Hệ thống & Cài đặt
+            </NavLink>
+          )}
           <NavLink to="/" className={styles.navItem} style={{ marginTop: 'auto' }}>
             <i className="fa-solid fa-store"></i> Xem Website
           </NavLink>

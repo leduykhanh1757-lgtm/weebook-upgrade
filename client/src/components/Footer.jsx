@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { marketingAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import styles from './Footer.module.css';
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setLoading(true);
+    try {
+      const res = await marketingAPI.subscribeNewsletter(email);
+      toast.success(res.message);
+      setEmail('');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Đăng ký thất bại, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <footer className={styles.footer}>
       <div className={`container ${styles.footerMain}`}>
@@ -38,9 +59,18 @@ const Footer = () => {
         <div className={styles.footerCol}>
           <h3>Nhận tin khuyến mãi</h3>
           <p style={{ color: 'var(--text-muted)', marginBottom: '10px' }}>Hỗ trợ khách hàng 24/7</p>
-          <form className={styles.newsletterForm} onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="Nhập email của bạn" required />
-            <button type="submit">Đăng ký</button>
+          <form className={styles.newsletterForm} onSubmit={handleSubscribe}>
+            <input 
+              type="email" 
+              placeholder="Nhập email của bạn" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required 
+              disabled={loading}
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Đang gửi...' : 'Đăng ký'}
+            </button>
           </form>
           <p className={styles.socialTitle}>Theo dõi chúng tôi</p>
           <div className={styles.socialIcons}>

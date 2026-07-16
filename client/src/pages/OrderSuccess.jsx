@@ -11,7 +11,7 @@ const OrderSuccess = () => {
       <p style={{ fontSize: '18px', marginTop: '20px' }}>Cảm ơn bạn đã mua sắm tại BookSelf.</p>
       {orderCode && <p>Mã đơn hàng của bạn là: <strong>#{orderCode}</strong></p>}
       <div style={{ marginTop: '30px', display: 'flex', gap: '20px', justifyContent: 'center' }}>
-        <Link to="/orders" className="btn btn-primary">Xem đơn hàng</Link>
+        <Link to="/profile/orders" className="btn btn-primary">Xem đơn hàng</Link>
         <Link to="/" className="btn" style={{ background: '#e2e8f0' }}>Về trang chủ</Link>
       </div>
     </div>

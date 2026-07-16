@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { getDb } = require('../database');
 const { generateToken, requireAuth } = require('../middleware/auth');
+const { sendVerificationEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -66,6 +67,10 @@ router.post('/login', (req, res) => {
 
         if (!user) {
             return res.status(401).json({ error: 'Sai email hoặc mật khẩu!' });
+        }
+
+        if (user.status === 'banned') {
+            return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa do vi phạm chính sách.' });
         }
 
         // Compare password
@@ -165,7 +170,7 @@ router.put('/password', requireAuth, (req, res) => {
 });
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {
@@ -177,13 +182,62 @@ router.post('/forgot-password', (req, res) => {
         
         if (!user) {
             // To prevent email enumeration, we still return success or a generic message.
-            // But since this is a demo, we can just say success anyway.
             return res.status(200).json({ message: 'Đã gửi hướng dẫn khôi phục qua email' });
         }
         
-        res.status(200).json({ message: 'Đã gửi hướng dẫn khôi phục qua email' });
+        // Generate a 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Save to db, expires in 15 minutes
+        db.prepare("UPDATE users SET reset_code = ?, reset_code_expires = datetime('now', '+15 minutes') WHERE email = ?")
+          .run(code, email);
+        
+        // Send email
+        const emailSent = await sendVerificationEmail(email, code);
+        
+        if (!emailSent) {
+            return res.status(500).json({ error: 'Không thể gửi email, vui lòng thử lại sau.' });
+        }
+        
+        res.status(200).json({ message: 'Đã gửi mã xác nhận qua email' });
     } catch (err) {
         console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Lỗi server!' });
+    }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: 'Vui lòng cung cấp đủ thông tin!' });
+        }
+        
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự!' });
+        }
+        
+        const db = getDb();
+        
+        // Check if user exists and code matches and is not expired
+        const user = db.prepare("SELECT id FROM users WHERE email = ? AND reset_code = ? AND datetime(reset_code_expires) >= datetime('now')").get(email, code);
+        
+        if (!user) {
+            return res.status(400).json({ error: 'Mã xác nhận không hợp lệ hoặc đã hết hạn!' });
+        }
+        
+        // Hash new password
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        
+        // Update password and clear reset code
+        db.prepare('UPDATE users SET password = ?, reset_code = NULL, reset_code_expires = NULL WHERE id = ?')
+          .run(hashedPassword, user.id);
+          
+        res.status(200).json({ message: 'Đổi mật khẩu thành công! Bạn có thể đăng nhập.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
     }
 });

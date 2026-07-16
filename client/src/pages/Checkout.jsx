@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ordersAPI, authAPI } from '../services/api';
+import { ordersAPI, authAPI, marketingAPI } from '../services/api';
 import { clearCart } from '../store/cartSlice';
 import { toast } from 'react-hot-toast';
 import styles from './Checkout.module.css';
@@ -34,9 +34,19 @@ const Checkout = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [validCouponCode, setValidCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+
+  useEffect(() => {
+    const email = formData.email || user?.email;
+    marketingAPI.getActiveCoupons(email).then(res => setAvailableCoupons(res)).catch(() => {});
+  }, [formData.email, user?.email]);
 
   useEffect(() => {
     fetch('https://provinces.open-api.vn/api/p/')
@@ -84,7 +94,32 @@ const Checkout = () => {
     shipping = 0; // Chưa chọn tỉnh thì hiển thị 0 hoặc ẩn
   }
 
-  const total = subtotal + shipping;
+  const total = subtotal + shipping - discountAmount;
+
+  const handleApplyCoupon = async (codeToApply = null) => {
+    const code = typeof codeToApply === 'string' ? codeToApply : couponCode;
+    if (!code.trim()) return toast.error('Vui lòng nhập mã khuyến mãi');
+    setCouponLoading(true);
+    try {
+      const currentEmail = formData.email || user?.email;
+      const res = await marketingAPI.validateCoupon(code, subtotal, currentEmail);
+      setDiscountAmount(res.coupon.discount_amount);
+      setValidCouponCode(res.coupon.code);
+      toast.success(res.message);
+    } catch (err) {
+      setDiscountAmount(0);
+      setValidCouponCode('');
+      toast.error(err.response?.data?.error || 'Lỗi áp dụng mã khuyến mãi');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setValidCouponCode('');
+    setDiscountAmount(0);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -139,6 +174,10 @@ const Checkout = () => {
       payload.ward = formData.ward;
       payload.address = formData.address;
 
+      if (validCouponCode) {
+        payload.couponCode = validCouponCode;
+      }
+
       // Automatically save new address for logged-in user
       if (isAuthenticated) {
         const fullAddrStr = `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`;
@@ -156,6 +195,10 @@ const Checkout = () => {
     }
 
     setLoading(true);
+    if (validCouponCode) {
+      payload.couponCode = validCouponCode;
+    }
+
     try {
       if (buyNowItem) {
         payload.buyNowItem = { bookId: buyNowItem.bookId, quantity: buyNowItem.quantity };
@@ -298,8 +341,49 @@ const Checkout = () => {
               ))}
             </div>
             
+            <div style={{ marginTop: '15px', padding: '15px', background: '#f8fafc', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Nhập mã khuyến mãi" 
+                  value={couponCode} 
+                  onChange={e => setCouponCode(e.target.value)}
+                  disabled={validCouponCode !== ''}
+                  style={{ flex: 1, padding: '10px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                />
+                {validCouponCode ? (
+                  <button onClick={handleRemoveCoupon} style={{ padding: '0 15px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Bỏ mã</button>
+                ) : (
+                  <button onClick={handleApplyCoupon} disabled={couponLoading || !couponCode} style={{ padding: '0 15px', background: '#0ea5e9', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>{couponLoading ? 'Đang xét' : 'Áp dụng'}</button>
+                )}
+              </div>
+              {availableCoupons.length > 0 && !validCouponCode && (
+                <div style={{ marginTop: '10px' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '5px' }}>Mã giảm giá dành cho bạn:</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {availableCoupons.map(c => (
+                      <div 
+                        key={c.code}
+                        onClick={() => {
+                          setCouponCode(c.code);
+                          handleApplyCoupon(c.code);
+                        }}
+                        style={{ padding: '5px 10px', background: '#e0f2fe', color: '#0369a1', border: '1px dashed #7dd3fc', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '500' }}
+                        title={`Đơn tối thiểu ${formatPrice(c.min_order_value)}`}
+                      >
+                        {c.code} ({c.discount_type === 'percent' ? `-${c.discount_value}%` : `-${formatPrice(c.discount_value)}`})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className={styles.orderTotals}>
               <p><span>Tạm tính:</span> <span>{formatPrice(subtotal)}</span></p>
+              {discountAmount > 0 && (
+                <p style={{ color: '#16a34a' }}><span>Giảm giá (Coupon):</span> <span>- {formatPrice(discountAmount)}</span></p>
+              )}
               <p>
                 <span>Phí vận chuyển:</span> 
                 <span>

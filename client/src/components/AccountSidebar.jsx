@@ -58,12 +58,18 @@ const AccountSidebar = () => {
         </div>
 
         <div className={styles.navGroup}>
-          <h4 className={styles.groupTitle}>Quản lý đơn hàng</h4>
+          <h4 className={styles.groupTitle}>Đơn hàng & Mua sắm</h4>
           <NavLink 
-            to="/orders" 
+            to="/profile/orders" 
             className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
           >
-            <i className="fa-solid fa-clipboard-list"></i> Đơn mua
+            <i className="fa-solid fa-clipboard-list"></i> Đơn hàng của tôi
+          </NavLink>
+          <NavLink 
+            to="/profile/coupons" 
+            className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+          >
+            <i className="fa-solid fa-ticket-simple"></i> Kho Voucher
           </NavLink>
         </div>
 

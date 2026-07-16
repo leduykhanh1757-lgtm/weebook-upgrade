@@ -34,13 +34,46 @@ function initializeDatabase() {
             phone_verified INTEGER DEFAULT 0,
             newsletter_subscribed INTEGER DEFAULT 1,
             helpful_votes INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            reset_code TEXT,
+            reset_code_expires TEXT,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS subscribers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            slug TEXT UNIQUE NOT NULL,
+            parent_id INTEGER DEFAULT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS authors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            bio TEXT,
+            image TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS publishers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS books (
             id INTEGER PRIMARY KEY,
             title TEXT NOT NULL,
+            slug TEXT,
             author TEXT NOT NULL,
             publisher TEXT,
             publish_date TEXT,
@@ -48,6 +81,7 @@ function initializeDatabase() {
             subcategory TEXT,
             price INTEGER NOT NULL,
             original_price INTEGER,
+            import_price INTEGER DEFAULT 0,
             discount INTEGER DEFAULT 0,
             isbn TEXT,
             pages INTEGER,
@@ -63,6 +97,7 @@ function initializeDatabase() {
             tags TEXT, -- JSON array
             featured INTEGER DEFAULT 0,
             new_release INTEGER DEFAULT 0,
+            is_visible INTEGER DEFAULT 1,
             created_at TEXT DEFAULT (datetime('now'))
         );
 
@@ -89,25 +124,27 @@ function initializeDatabase() {
 
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_code TEXT,
-            user_id INTEGER NOT NULL,
+            user_id INTEGER,
+            order_code TEXT UNIQUE,
             full_name TEXT NOT NULL,
-            phone TEXT NOT NULL,
             email TEXT,
-            city TEXT,
-            district TEXT,
-            ward TEXT,
+            phone TEXT NOT NULL,
             address TEXT NOT NULL,
-            delivery_method TEXT DEFAULT 'standard',
-            payment_method TEXT DEFAULT 'cod',
+            city TEXT NOT NULL,
+            district TEXT NOT NULL,
+            ward TEXT NOT NULL,
             notes TEXT,
-            subtotal INTEGER NOT NULL,
-            shipping_cost INTEGER DEFAULT 0,
-            total INTEGER NOT NULL,
+            subtotal REAL NOT NULL,
+            shipping_cost REAL NOT NULL,
+            discount_amount REAL DEFAULT 0,
+            total REAL NOT NULL,
             status TEXT DEFAULT 'pending',
+            payment_method TEXT NOT NULL,
+            payment_status TEXT DEFAULT 'unpaid',
+            coupon_code TEXT,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            FOREIGN KEY (user_id) REFERENCES users (id)
         );
 
         CREATE TABLE IF NOT EXISTS order_items (
@@ -130,6 +167,7 @@ function initializeDatabase() {
             book_id INTEGER NOT NULL,
             rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
             comment TEXT,
+            status TEXT DEFAULT 'approved',
             created_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
             FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
@@ -137,13 +175,46 @@ function initializeDatabase() {
 
         CREATE TABLE IF NOT EXISTS addresses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
+            user_id INTEGER,
             receiver_name TEXT NOT NULL,
             phone TEXT NOT NULL,
             full_address TEXT NOT NULL,
             is_default INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        );
+
+        CREATE TABLE IF NOT EXISTS coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            discount_type TEXT NOT NULL, -- 'percent' or 'fixed'
+            discount_value REAL NOT NULL,
+            min_order_value REAL DEFAULT 0,
+            max_uses INTEGER DEFAULT NULL,
+            used_count INTEGER DEFAULT 0,
+            start_date TEXT,
+            end_date TEXT,
+            status TEXT DEFAULT 'active',
+            user_email TEXT, -- NULL for global, email for private
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS banners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            image_url TEXT NOT NULL,
+            title TEXT,
+            description TEXT,
+            link_url TEXT,
+            is_active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT UNIQUE NOT NULL,
+            value TEXT,
+            updated_at TEXT DEFAULT (datetime('now'))
         );
 
         -- Indexes for performance
@@ -157,6 +228,27 @@ function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
         CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
     `);
+
+    // Seed basic categories if empty
+    const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get().count;
+    if (catCount === 0) {
+        const insertCat = db.prepare('INSERT INTO categories (name, slug) VALUES (?, ?)');
+        insertCat.run('Văn học', 'van-hoc');
+        insertCat.run('Kinh tế', 'kinh-te');
+        insertCat.run('Kỹ năng', 'ky-nang');
+        insertCat.run('Thiếu nhi', 'thieu-nhi');
+        insertCat.run('Ngoại ngữ', 'ngoai-ngu');
+    }
+
+    // Seed default settings if empty
+    const settingsCount = db.prepare('SELECT COUNT(*) as count FROM settings').get().count;
+    if (settingsCount === 0) {
+        const insertSetting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
+        insertSetting.run('store_email', 'support@bookself.vn');
+        insertSetting.run('store_phone', '1900 1508');
+        insertSetting.run('store_address', '123 Đường Sách, Quận 1, TP.HCM');
+        insertSetting.run('shipping_fee', '30000');
+    }
 
     console.log('✅ Database initialized successfully');
 }

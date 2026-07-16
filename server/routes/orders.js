@@ -2,13 +2,14 @@
 const express = require('express');
 const { getDb } = require('../database');
 const { requireAuth } = require('../middleware/auth');
+const { ORDER_STATUS } = require('../constants/statusEnum');
 
 const router = express.Router();
 
 // POST /api/orders - Create order
 router.post('/', requireAuth, (req, res) => {
     try {
-        const { fullName, phone, email, city, district, ward, address, payment, notes, shippingCost, buyNowItem } = req.body;
+        const { fullName, phone, email, city, district, ward, address, payment, notes, shippingCost, buyNowItem, couponCode } = req.body;
 
         if (!fullName || !phone || !address) {
             return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin!' });
@@ -53,7 +54,34 @@ router.post('/', requireAuth, (req, res) => {
         });
 
         const calculatedShipping = Number(shippingCost) || 0;
-        const total = subtotal + calculatedShipping;
+        let discount = 0;
+        let validCoupon = null;
+
+        // Re-validate coupon
+        if (couponCode) {
+            const userEmail = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.id)?.email;
+            const coupon = db.prepare('SELECT * FROM coupons WHERE code = ? COLLATE NOCASE').get(couponCode);
+            
+            if (coupon && coupon.status === 'active') {
+                const now = new Date();
+                const isValidDate = (!coupon.start_date || new Date(coupon.start_date) <= now) && (!coupon.end_date || new Date(coupon.end_date) >= now);
+                const isValidUses = coupon.max_uses === null || coupon.used_count < coupon.max_uses;
+                const isValidMinOrder = subtotal >= coupon.min_order_value;
+                const isEmailValid = !coupon.user_email || coupon.user_email === userEmail;
+
+                if (isValidDate && isValidUses && isValidMinOrder && isEmailValid) {
+                    validCoupon = coupon;
+                    if (coupon.discount_type === 'percent') {
+                        discount = subtotal * (coupon.discount_value / 100);
+                    } else {
+                        discount = coupon.discount_value;
+                    }
+                    if (discount > subtotal) discount = subtotal;
+                }
+            }
+        }
+
+        const total = subtotal + calculatedShipping - discount;
 
         // Generate Order Code
         const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
@@ -63,9 +91,9 @@ router.post('/', requireAuth, (req, res) => {
         // Create order in transaction
         const createOrder = db.transaction(() => {
             const orderResult = db.prepare(`
-                INSERT INTO orders (order_code, user_id, full_name, phone, email, city, district, ward, address, payment_method, notes, subtotal, shipping_cost, total)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(orderCode, req.user.id, fullName, phone, email || null, city || null, district || null, ward || null, address, payment || 'cod', notes || null, subtotal, calculatedShipping, total);
+                INSERT INTO orders (order_code, user_id, full_name, phone, email, city, district, ward, address, payment_method, notes, subtotal, shipping_cost, discount_amount, total, coupon_code)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(orderCode, req.user.id, fullName, phone, email || null, city || null, district || null, ward || null, address, payment || 'cod', notes || null, subtotal, calculatedShipping, discount, total, validCoupon ? validCoupon.code : null);
 
             const orderId = orderResult.lastInsertRowid;
 
@@ -81,6 +109,11 @@ router.post('/', requireAuth, (req, res) => {
             for (const item of orderItems) {
                 insertItem.run(orderId, item.bookId, item.title, item.author, item.price, item.quantity, item.total, item.image);
                 updateStock.run(item.quantity, item.bookId, item.quantity);
+            }
+
+            // Increment coupon used_count
+            if (validCoupon) {
+                db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(validCoupon.id);
             }
 
             // Clear cart only if not a direct buy
@@ -159,13 +192,13 @@ router.put('/:id/cancel', requireAuth, (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy đơn hàng!' });
         }
         
-        if (order.status !== 'pending') {
+        if (order.status !== ORDER_STATUS.PENDING) {
             return res.status(400).json({ error: 'Chỉ có thể hủy đơn hàng đang chờ xác nhận!' });
         }
 
         db.transaction(() => {
             // Update order status
-            db.prepare("UPDATE orders SET status = 'cancelled', updated_at = datetime('now') WHERE id = ?").run(orderId);
+            db.prepare("UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?").run(ORDER_STATUS.CANCELLED, orderId);
             
             // Return stock
             const items = db.prepare('SELECT book_id, quantity FROM order_items WHERE order_id = ?').all(orderId);

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchCart } from './store/cartSlice';
 
 import { Toaster } from 'react-hot-toast';
@@ -8,6 +8,7 @@ import { Toaster } from 'react-hot-toast';
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Chatbox from './components/Chatbox';
 
 // Pages
 import Home from './pages/Home';
@@ -30,14 +31,21 @@ import AdminLayout from './components/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import AdminCatalog from './pages/admin/AdminCatalog';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminCustomers from './pages/admin/AdminCustomers';
+import AdminMarketing from './pages/admin/AdminMarketing';
+import AdminSettings from './pages/admin/AdminSettings';
+import MyCoupons from './pages/MyCoupons';
 
 function App() {
   const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Fetch cart on load
-    dispatch(fetchCart());
-  }, [dispatch]);
+    // Fetch cart on load if logged in
+    if (isAuthenticated) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, isAuthenticated]);
 
   return (
     <div className="app-container">
@@ -48,9 +56,9 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="catalog/*" element={<AdminCatalog />} />
           <Route path="orders" element={<AdminOrders />} />
-          <Route path="customers" element={<div style={{padding: 30}}><h2>Quản lý Khách hàng</h2><p>Tính năng đang phát triển...</p></div>} />
-          <Route path="marketing" element={<div style={{padding: 30}}><h2>Marketing & Khuyến mãi</h2><p>Tính năng đang phát triển...</p></div>} />
-          <Route path="settings" element={<div style={{padding: 30}}><h2>Hệ thống & Cài đặt</h2><p>Tính năng đang phát triển...</p></div>} />
+          <Route path="customers" element={<AdminCustomers />} />
+          <Route path="marketing" element={<AdminMarketing />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
 
         {/* Storefront Routes */}
@@ -68,7 +76,8 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/address" element={<AddressBook />} />
                 <Route path="/profile/password" element={<ChangePassword />} />
-                <Route path="/orders" element={<Orders />} />
+                <Route path="/profile/orders" element={<Orders />} />
+                <Route path="/profile/coupons" element={<MyCoupons />} />
                 <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/order-success" element={<OrderSuccess />} />
                 <Route path="/user/:id" element={<PublicProfile />} />
@@ -76,6 +85,7 @@ function App() {
               </Routes>
             </main>
             <Footer />
+            <Chatbox />
           </>
         } />
       </Routes>

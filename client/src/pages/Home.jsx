@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { booksAPI } from '../services/api';
+import { booksAPI, marketingAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import styles from './Home.module.css';
 
@@ -12,25 +12,37 @@ const Home = () => {
 
   // Banner Slider Logic
   const [currentSlide, setCurrentSlide] = useState(0);
-  const banners = [
-    '/src/assets/images/banner1.jpg',
-    '/src/assets/images/banner2.jpg',
-    '/src/assets/images/banner3.jpg'
-  ];
+  const [banners, setBanners] = useState([]);
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const featuredRes = await booksAPI.getBooks({ limit: 12, type: 'featured' });
+        const [featuredRes, newRes, topRes, bannersRes] = await Promise.all([
+          booksAPI.getBooks({ limit: 12, type: 'featured' }),
+          booksAPI.getBooks({ limit: 12, type: 'new' }),
+          booksAPI.getBooks({ limit: 12, sort: 'rating' }),
+          marketingAPI.getBanners().catch(err => {
+            console.error('Error fetching banners', err);
+            return []; // Fallback to empty array if banners fail
+          })
+        ]);
+        
         setFeaturedBooks(featuredRes.books || []);
-
-        const newRes = await booksAPI.getBooks({ limit: 12, type: 'new' });
         setNewReleases(newRes.books || []);
-
-        const topRes = await booksAPI.getBooks({ limit: 12, sort: 'rating' });
         setTopRatedBooks(topRes.books || []);
+        
+        if (bannersRes && bannersRes.length > 0) {
+          setBanners(bannersRes);
+        } else {
+          // Fallback static banners if DB is empty
+          setBanners([
+            { image_url: '/src/assets/images/banner1.jpg', link_url: '' },
+            { image_url: '/src/assets/images/banner2.jpg', link_url: '' },
+            { image_url: '/src/assets/images/banner3.jpg', link_url: '' }
+          ]);
+        }
       } catch (err) {
-        console.error('Error fetching books for home page', err);
+        console.error('Error fetching data for home page', err);
       } finally {
         setLoading(false);
       }
@@ -57,9 +69,13 @@ const Home = () => {
             className={styles.slides}
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
-            {banners.map((src, idx) => (
+            {banners.map((banner, idx) => (
               <div key={idx} className={styles.slide}>
-                <img src={src} alt={`Banner ${idx + 1}`} />
+                {banner.link_url ? (
+                   <Link to={banner.link_url}><img src={banner.image_url} alt={banner.title || `Banner ${idx + 1}`} /></Link>
+                ) : (
+                   <img src={banner.image_url} alt={banner.title || `Banner ${idx + 1}`} />
+                )}
               </div>
             ))}
           </div>
