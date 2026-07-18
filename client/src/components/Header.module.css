@@ -282,7 +282,8 @@
   animation: slideUp 0.2s ease-out forwards;
 }
 
-.accountDropdown a, .accountDropdown button {
+.accountDropdown a,
+.accountDropdown button {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -293,7 +294,8 @@
   font-size: 0.95rem;
 }
 
-.accountDropdown a:hover, .accountDropdown button:hover {
+.accountDropdown a:hover,
+.accountDropdown button:hover {
   background-color: var(--bg-main);
   color: var(--primary-color);
 }

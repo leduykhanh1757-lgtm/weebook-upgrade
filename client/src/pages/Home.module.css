@@ -85,11 +85,21 @@
   opacity: 1;
 }
 
-.sliderBtn.prev { left: 15px; }
-.sliderBtn.next { right: 15px; }
-.sliderBtn:hover { background: white; color: var(--primary-color); }
+.sliderBtn.prev {
+  left: 15px;
+}
 
-.heroSide, .voucherContainer {
+.sliderBtn.next {
+  right: 15px;
+}
+
+.sliderBtn:hover {
+  background: white;
+  color: var(--primary-color);
+}
+
+.heroSide,
+.voucherContainer {
   display: none;
 }
 
@@ -105,7 +115,8 @@
   border-radius: var(--border-radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  background-color: #f78d2b; /* Match Halloween orange */
+  background-color: #f78d2b;
+  /* Match Halloween orange */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,7 +288,7 @@
   position: relative;
   z-index: 10;
   padding-left: 30px;
-  border-left: 1px solid rgba(255,255,255,0.15);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .promoFeatureItem {
@@ -290,7 +301,7 @@
   width: 45px;
   height: 45px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -335,14 +346,22 @@
   mix-blend-mode: screen;
   mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
   -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 70%);
-  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.2));
   animation: float 6s ease-in-out infinite;
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 @media (max-width: 768px) {
@@ -352,16 +371,19 @@
     padding: 30px 20px;
     gap: 20px;
   }
+
   .promoBannerInner {
     text-align: center;
     max-width: 100%;
   }
+
   .promoBannerInner h3 {
     font-size: 1.8rem;
   }
+
   .promoMiddleFeatures {
     border-left: none;
-    border-top: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     padding-left: 0;
     padding-top: 20px;
     flex-direction: row;
@@ -369,14 +391,17 @@
     justify-content: center;
     gap: 15px;
   }
+
   .promoFeatureItem {
     flex-direction: column;
     gap: 8px;
     text-align: center;
   }
+
   .promoFeatureText {
     text-align: center;
   }
+
   .promoGraphic {
     width: 200px;
     height: 200px;
@@ -387,6 +412,7 @@
   .heroSection {
     grid-template-columns: 1fr;
   }
+
   .heroSidebar {
     display: none;
   }

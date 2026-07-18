@@ -13,13 +13,15 @@
 .card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
-  border-color: rgba(79, 70, 229, 0.3); /* Subtle primary tint */
+  border-color: rgba(79, 70, 229, 0.3);
+  /* Subtle primary tint */
 }
 
 .imageContainer {
   position: relative;
   width: 100%;
-  aspect-ratio: 1; /* Square for product image container */
+  aspect-ratio: 1;
+  /* Square for product image container */
   padding: 15px;
   background-color: #f9fafb;
   display: flex;

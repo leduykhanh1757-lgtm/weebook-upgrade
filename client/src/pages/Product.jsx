@@ -218,18 +218,18 @@ const Product = () => {
                 <i className={inWishlist ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
               </button>
             </div>
-            <button className={`btn ${styles.buyNowBtn}`} onClick={handleBuyNow} disabled={book.stock <= 0} style={{ width: '100%', marginTop: '15px' }}>
+            <button className={`btn ${styles.buyNowBtn}`} onClick={handleBuyNow} disabled={book.stock <= 0} style={{ width: '100%', marginTop: '12px' }}>
               Mua ngay
             </button>
           </div>
 
           <div className={styles.productDescription}>
-            <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '15px' }}>Mô tả sản phẩm</h3>
+            <h3>Mô tả sản phẩm</h3>
             <p>{book.description || 'Chưa có mô tả cho sản phẩm này.'}</p>
           </div>
 
           <div className={styles.productSpecs}>
-            <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '15px' }}>Thông tin chi tiết</h3>
+            <h3>Thông tin chi tiết</h3>
             <table className={styles.specsTable}>
               <tbody>
                 <tr><td>Nhà xuất bản</td><td>{book.publisher || 'Đang cập nhật'}</td></tr>
@@ -245,7 +245,7 @@ const Product = () => {
       </div>
       
       <div className={styles.reviewsSection}>
-        <h2 style={{ marginBottom: '20px', fontSize: '1.5rem', borderBottom: '2px solid var(--primary-color)', display: 'inline-block', paddingBottom: '5px' }}>Đánh giá sản phẩm</h2>
+        <h2 className={styles.sectionTitle}>Đánh giá sản phẩm</h2>
         
         <div className={styles.addReviewBox}>
           <h3>Viết đánh giá của bạn</h3>
@@ -258,7 +258,6 @@ const Product = () => {
               <select 
                 value={newRating} 
                 onChange={(e) => setNewRating(Number(e.target.value))}
-                style={{ padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}
               >
                 <option value={5}>5 Sao - Tuyệt vời</option>
                 <option value={4}>4 Sao - Rất tốt</option>
@@ -271,7 +270,6 @@ const Product = () => {
               value={newReview} 
               onChange={(e) => setNewReview(e.target.value)} 
               placeholder="Chia sẻ cảm nhận của bạn về cuốn sách này..."
-              style={{ width: '100%', minHeight: '100px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '10px' }}
             />
             <button type="submit" className="btn btn-primary">Gửi đánh giá</button>
           </form>
@@ -317,8 +315,8 @@ const Product = () => {
       
       {relatedBooks.length > 0 && (
         <section>
-          <h2 style={{ marginBottom: '20px', fontSize: '1.5rem', borderBottom: '2px solid var(--primary-color)', display: 'inline-block', paddingBottom: '5px' }}>Sản phẩm liên quan</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '25px', marginTop: '20px' }}>
+          <h2 className={styles.sectionTitle}>Sản phẩm liên quan</h2>
+          <div className={styles.relatedGrid}>
             {relatedBooks.map(b => <ProductCard key={b.id} book={b} />)}
           </div>
         </section>

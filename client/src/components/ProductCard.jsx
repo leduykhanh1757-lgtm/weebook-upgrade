@@ -11,8 +11,13 @@ const ProductCard = ({ book }) => {
   const [inWishlist, setInWishlist] = useState(false);
 
   useEffect(() => {
-    const localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
-    setInWishlist(localWishlist.includes(book.id));
+    try {
+      const localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
+      setInWishlist(Array.isArray(localWishlist) && localWishlist.includes(book.id));
+    } catch (e) {
+      console.error('Failed to parse wishlist', e);
+      setInWishlist(false);
+    }
   }, [book.id]);
 
   const handleAddToCart = (e) => {
@@ -33,7 +38,14 @@ const ProductCard = ({ book }) => {
         }
       }
       
-      const localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
+      let localWishlist = [];
+      try {
+        localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
+        if (!Array.isArray(localWishlist)) localWishlist = [];
+      } catch (e) {
+        console.error('Failed to parse wishlist', e);
+      }
+      
       if (inWishlist) {
         const updated = localWishlist.filter(id => id !== book.id);
         localStorage.setItem('bookself-wishlist', JSON.stringify(updated));

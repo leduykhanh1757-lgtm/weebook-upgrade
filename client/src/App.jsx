@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCart } from './store/cartSlice';
+import { wishlistAPI } from './services/api';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -41,9 +42,16 @@ function App() {
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Fetch cart on load if logged in
+    // Fetch cart & sync wishlist on load if logged in
     if (isAuthenticated) {
       dispatch(fetchCart());
+      wishlistAPI.getWishlist()
+        .then(res => {
+          const items = res?.items || [];
+          const ids = items.map(item => item.id);
+          localStorage.setItem('bookself-wishlist', JSON.stringify(ids));
+        })
+        .catch(err => console.error('Failed to sync wishlist', err));
     }
   }, [dispatch, isAuthenticated]);
 

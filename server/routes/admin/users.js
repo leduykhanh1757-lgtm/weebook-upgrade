@@ -1,6 +1,7 @@
 // ========== ADMIN — USERS MANAGEMENT ========== //
 const express = require('express');
 const { getDb } = require('../../database');
+const { ORDER_STATUS } = require('../../constants/statusEnum');
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get('/', (req, res) => {
         const users = db.prepare(`
             SELECT u.id, u.name, u.email, u.phone, u.created_at, u.status, u.role,
                    COUNT(o.id) as total_orders,
-                   SUM(CASE WHEN o.status = 'completed' THEN o.total ELSE 0 END) as ltv
+                   SUM(CASE WHEN o.status = '${ORDER_STATUS.COMPLETED}' THEN o.total ELSE 0 END) as ltv
             FROM users u
             LEFT JOIN orders o ON u.id = o.user_id
             GROUP BY u.id
@@ -32,7 +33,7 @@ router.get('/:id', (req, res) => {
         const user = db.prepare(`
             SELECT u.id, u.name, u.email, u.phone, u.created_at, u.status, u.role, u.gender, u.birthday, u.address,
                    COUNT(o.id) as total_orders,
-                   SUM(CASE WHEN o.status = 'completed' THEN o.total ELSE 0 END) as ltv
+                   SUM(CASE WHEN o.status = '${ORDER_STATUS.COMPLETED}' THEN o.total ELSE 0 END) as ltv
             FROM users u
             LEFT JOIN orders o ON u.id = o.user_id
             WHERE u.id = ?

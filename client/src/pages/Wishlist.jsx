@@ -31,6 +31,17 @@ const Wishlist = () => {
     try {
       await wishlistAPI.removeFromWishlist(bookId);
       setWishlist(wishlist.filter(item => item.id !== bookId));
+      
+      try {
+        let localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
+        if (Array.isArray(localWishlist)) {
+          const updated = localWishlist.filter(id => id !== bookId);
+          localStorage.setItem('bookself-wishlist', JSON.stringify(updated));
+        }
+      } catch (e) {
+        console.error('Failed to parse wishlist', e);
+      }
+
       toast.success('Đã xóa khỏi yêu thích');
     } catch (err) {
       toast.error('Không thể xóa khỏi yêu thích');
