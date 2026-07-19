@@ -16,6 +16,7 @@ const Product = () => {
   const [relatedBooks, setRelatedBooks] = useState([]);
   const [quantity, setQuantity] = useState(parseInt(searchParams.get('qty')) || 1);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [inWishlist, setInWishlist] = useState(false);
@@ -68,6 +69,7 @@ const Product = () => {
   useEffect(() => {
     fetchProductData();
     setQuantity(parseInt(searchParams.get('qty')) || 1);
+    setSelectedImage(0);
     window.scrollTo(0, 0);
 
     const localWishlist = JSON.parse(localStorage.getItem('bookself-wishlist') || '[]');
@@ -160,37 +162,85 @@ const Product = () => {
     return stars;
   };
 
+  const allImages = book?.images?.length > 0 ? book.images : ['/src/assets/images/placeholder.jpg'];
+
   if (loading) return <div className="container loading-placeholder"><p>Đang tải thông tin sách...</p></div>;
   if (!book) return <div className="container loading-placeholder"><p>Không tìm thấy sản phẩm!</p></div>;
 
   return (
     <div className={`container ${styles.productPage}`}>
+      {/* ===== MAIN 2-COLUMN LAYOUT ===== */}
       <div className={styles.productDetailContainer}>
-        <div className={styles.productImages}>
-          <div className={styles.mainImage}>
-            <img src={book.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={book.title} />
-          </div>
-        </div>
         
-          <div className={styles.productInfo}>
-          <h1 className={styles.productTitle}>{book.title}</h1>
-          <div className={styles.productMeta}>
-            <div className={styles.ratingSection}>
-              {renderStars(book.rating || 0)}
-              <span className={styles.reviewCount}>({book.review_count || 0} đánh giá)</span>
+        {/* ----- LEFT: Images + Action Buttons ----- */}
+        <div className={styles.leftColumn}>
+          <div className={styles.productImages}>
+            <div className={styles.mainImage}>
+              <img src={allImages[selectedImage]} alt={book.title} />
             </div>
-            <span>Tác giả: <strong>{book.author}</strong></span>
-            <span>|</span>
-            <span>Thể loại: <strong>{translateCategory(book.category)}</strong></span>
-            {book.stock <= 0 && (
-              <>
-                <span>|</span>
-                <span style={{ color: 'var(--danger-color)', fontWeight: 'bold' }}>Hết hàng</span>
-              </>
+            {allImages.length > 1 && (
+              <div className={styles.thumbnailStrip}>
+                {allImages.slice(0, 5).map((img, idx) => (
+                  <div
+                    key={idx}
+                    className={`${styles.thumbnail} ${selectedImage === idx ? styles.thumbActive : ''}`}
+                    onClick={() => setSelectedImage(idx)}
+                  >
+                    <img src={img} alt={`Ảnh ${idx + 1}`} />
+                  </div>
+                ))}
+                {allImages.length > 5 && (
+                  <div className={styles.thumbnail}>
+                    <span className={styles.moreImages}>+{allImages.length - 5}</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-          
-          <div className={styles.productPrice}>
+
+          {/* Action buttons below image */}
+          <div className={styles.actionButtons}>
+            <button className={styles.addToCartBtn} onClick={handleAddToCart} disabled={book.stock <= 0}>
+              <i className="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
+            </button>
+            <button className={styles.buyNowBtn} onClick={handleBuyNow} disabled={book.stock <= 0}>
+              Mua ngay
+            </button>
+          </div>
+        </div>
+
+        {/* ----- RIGHT: Product Info ----- */}
+        <div className={styles.rightColumn}>
+          <h1 className={styles.productTitle}>{book.title}</h1>
+
+          {/* Meta info row */}
+          <div className={styles.metaRow}>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Tác giả:</span>
+              <span className={styles.metaValue}>{book.author}</span>
+            </div>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Nhà xuất bản:</span>
+              <span className={styles.metaValue}>{book.publisher || 'Đang cập nhật'}</span>
+            </div>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Hình thức bìa:</span>
+              <span className={styles.metaValue}>{book.format || 'Bìa mềm'}</span>
+            </div>
+          </div>
+
+          {/* Rating + sold */}
+          <div className={styles.ratingRow}>
+            <div className={styles.ratingStars}>
+              {renderStars(book.rating || 0)}
+            </div>
+            <span className={styles.reviewCount}>({book.review_count || 0} đánh giá)</span>
+            <span className={styles.separator}>|</span>
+            <span className={styles.soldCount}>Đã bán {book.sold || 0}</span>
+          </div>
+
+          {/* Price block */}
+          <div className={styles.priceBlock}>
             <span className={styles.currentPrice}>{formatPrice(book.price)}</span>
             {book.original_price > book.price && (
               <>
@@ -199,62 +249,87 @@ const Product = () => {
               </>
             )}
           </div>
-          
-          <div className={styles.addToCartSection}>
-            <div className={styles.actionRowPrimary}>
-              <div className={styles.quantitySelector}>
-                <button className={styles.qtyBtn} onClick={() => setQuantity(Math.max(1, quantity - 1))}>-</button>
-                <input type="number" className={styles.qtyInput} value={quantity} readOnly />
-                <button className={styles.qtyBtn} onClick={() => setQuantity(quantity + 1)}>+</button>
-              </div>
-              <button className={`btn ${styles.addToCartBtn}`} onClick={handleAddToCart} disabled={book.stock <= 0}>
-                <i className="fas fa-shopping-cart"></i> Thêm vào giỏ
-              </button>
-              <button 
-                className={`${styles.wishlistBtn} ${inWishlist ? styles.active : ''}`} 
-                onClick={handleToggleWishlist}
-                title={inWishlist ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
-              >
-                <i className={inWishlist ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
-              </button>
+
+          {/* Stock status */}
+          <div className={styles.stockStatus}>
+            {book.stock > 0 ? (
+              <span className={styles.inStock}>
+                <i className="fa-solid fa-circle-check"></i> Còn hàng ({book.stock} sản phẩm)
+              </span>
+            ) : (
+              <span className={styles.outOfStock}>
+                <i className="fa-solid fa-circle-xmark"></i> Hết hàng
+              </span>
+            )}
+          </div>
+
+          {/* Shipping info */}
+          <div className={styles.shippingCard}>
+            <div className={styles.shippingTitle}>
+              <i className="fa-solid fa-truck"></i> Thông tin vận chuyển
             </div>
-            <button className={`btn ${styles.buyNowBtn}`} onClick={handleBuyNow} disabled={book.stock <= 0} style={{ width: '100%', marginTop: '12px' }}>
-              Mua ngay
+            <p className={styles.shippingText}>Giao hàng tiêu chuẩn — Dự kiến giao trong 2-5 ngày</p>
+            <p className={styles.shippingText}><i className="fa-solid fa-shield-halved"></i> Đổi trả miễn phí trong 7 ngày</p>
+          </div>
+
+          {/* Quantity */}
+          <div className={styles.quantityRow}>
+            <span className={styles.quantityLabel}>Số lượng:</span>
+            <div className={styles.quantitySelector}>
+              <button className={styles.qtyBtn} onClick={() => setQuantity(Math.max(1, quantity - 1))}>−</button>
+              <input type="number" className={styles.qtyInput} value={quantity} readOnly />
+              <button className={styles.qtyBtn} onClick={() => setQuantity(quantity + 1)}>+</button>
+            </div>
+            <button
+              className={`${styles.wishlistBtn} ${inWishlist ? styles.active : ''}`}
+              onClick={handleToggleWishlist}
+              title={inWishlist ? "Bỏ yêu thích" : "Thêm vào yêu thích"}
+            >
+              <i className={inWishlist ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+              <span>{inWishlist ? 'Đã thích' : 'Yêu thích'}</span>
             </button>
-          </div>
-
-          <div className={styles.productDescription}>
-            <h3>Mô tả sản phẩm</h3>
-            <p>{book.description || 'Chưa có mô tả cho sản phẩm này.'}</p>
-          </div>
-
-          <div className={styles.productSpecs}>
-            <h3>Thông tin chi tiết</h3>
-            <table className={styles.specsTable}>
-              <tbody>
-                <tr><td>Nhà xuất bản</td><td>{book.publisher || 'Đang cập nhật'}</td></tr>
-                <tr><td>Ngày xuất bản</td><td>{book.publish_date || 'Đang cập nhật'}</td></tr>
-                <tr><td>Kích thước</td><td>{book.dimensions || 'Đang cập nhật'}</td></tr>
-                <tr><td>Trọng lượng</td><td>{book.weight || 'Đang cập nhật'}</td></tr>
-                <tr><td>Số trang</td><td>{book.pages || 'Đang cập nhật'}</td></tr>
-                <tr><td>Định dạng</td><td>{book.format || 'Bìa mềm'}</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
+
+      {/* ===== BELOW: Description + Specs ===== */}
+      <div className={styles.detailSections}>
+        <div className={styles.descriptionCard}>
+          <h3 className={styles.cardHeading}>Mô tả sản phẩm</h3>
+          <div className={styles.descriptionContent}>
+            <p>{book.description || 'Chưa có mô tả cho sản phẩm này.'}</p>
+          </div>
+        </div>
+
+        <div className={styles.specsCard}>
+          <h3 className={styles.cardHeading}>Thông tin chi tiết</h3>
+          <table className={styles.specsTable}>
+            <tbody>
+              <tr><td>Nhà xuất bản</td><td>{book.publisher || 'Đang cập nhật'}</td></tr>
+              <tr><td>Tác giả</td><td>{book.author}</td></tr>
+              <tr><td>Ngày xuất bản</td><td>{book.publish_date || 'Đang cập nhật'}</td></tr>
+              <tr><td>Kích thước</td><td>{book.dimensions || 'Đang cập nhật'}</td></tr>
+              <tr><td>Trọng lượng</td><td>{book.weight || 'Đang cập nhật'}</td></tr>
+              <tr><td>Số trang</td><td>{book.pages || 'Đang cập nhật'}</td></tr>
+              <tr><td>Hình thức</td><td>{book.format || 'Bìa mềm'}</td></tr>
+              <tr><td>Thể loại</td><td>{translateCategory(book.category)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       
+      {/* ===== REVIEWS ===== */}
       <div className={styles.reviewsSection}>
-        <h2 className={styles.sectionTitle}>Đánh giá sản phẩm</h2>
+        <h2 className={styles.cardHeading}>Đánh giá sản phẩm</h2>
         
         <div className={styles.addReviewBox}>
           <h3>Viết đánh giá của bạn</h3>
           <form onSubmit={handleAddReview}>
-            <div style={{ marginBottom: '15px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+            <div className={styles.reviewMeta}>
               Đăng đánh giá với tên: <strong>{isAuthenticated && user ? user.name : 'Khách'}</strong>
             </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>Đánh giá của bạn:</label>
+            <div className={styles.formGroup}>
+              <label>Đánh giá của bạn:</label>
               <select 
                 value={newRating} 
                 onChange={(e) => setNewRating(Number(e.target.value))}
@@ -277,17 +352,17 @@ const Product = () => {
 
         <div className={styles.reviewList}>
           {reviews.length === 0 ? (
-            <p>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>
+            <p className={styles.noReviews}>Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!</p>
           ) : (
             reviews.map(review => (
               <div key={review.id} className={styles.reviewItem}>
                 <div className={styles.reviewHeader}>
                   <div className={styles.reviewUser}>
                     {review.userId ? (
-                      <Link to={`/user/${review.userId}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
+                      <Link to={`/user/${review.userId}`} className={styles.reviewUserLink}>
                         <div className={styles.avatar}>
                           {review.avatar ? (
-                            <img src={review.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                            <img src={review.avatar} alt="Avatar" />
                           ) : (
                             review.user.charAt(0).toUpperCase()
                           )}
@@ -295,7 +370,7 @@ const Product = () => {
                         <strong>{review.user}</strong>
                       </Link>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className={styles.reviewUserLink}>
                         <div className={styles.avatar}>{review.user.charAt(0).toUpperCase()}</div>
                         <strong>{review.user}</strong>
                       </div>
@@ -313,9 +388,10 @@ const Product = () => {
         </div>
       </div>
       
+      {/* ===== RELATED PRODUCTS ===== */}
       {relatedBooks.length > 0 && (
-        <section>
-          <h2 className={styles.sectionTitle}>Sản phẩm liên quan</h2>
+        <section className={styles.relatedSection}>
+          <h2 className={styles.cardHeading}>Sản phẩm liên quan</h2>
           <div className={styles.relatedGrid}>
             {relatedBooks.map(b => <ProductCard key={b.id} book={b} />)}
           </div>
