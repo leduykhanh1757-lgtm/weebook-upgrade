@@ -1,35 +1,34 @@
+// ========== USERS ROUTES (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../database');
+const { pool } = require('../database');
 
 const router = express.Router();
 
 // GET /api/users/:id
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const db = getDb();
         const userId = parseInt(req.params.id);
         
-        // Only select safe, public fields
-        const user = db.prepare('SELECT id, name, avatar, created_at, helpful_votes FROM users WHERE id = ?').get(userId);
+        const [userRows] = await pool.query('SELECT id, name, avatar, created_at, helpful_votes FROM users WHERE id = ?', [userId]);
+        const user = userRows[0];
 
         if (!user) {
             return res.status(404).json({ error: 'Không tìm thấy người dùng!' });
         }
 
-        const reviewCount = db.prepare('SELECT COUNT(*) as count FROM reviews WHERE user_id = ?').get(userId).count;
+        const [reviewCountRows] = await pool.query('SELECT COUNT(*) as count FROM reviews WHERE user_id = ?', [userId]);
+        const reviewCount = reviewCountRows[0].count;
 
-        // Fetch recent reviews
-        const recentReviews = db.prepare(`
+        const [recentReviews] = await pool.query(`
             SELECT r.id, r.rating, r.comment, r.created_at, b.id as book_id, b.title as book_title, b.images as book_images 
             FROM reviews r 
             JOIN books b ON r.book_id = b.id 
             WHERE r.user_id = ? 
             ORDER BY r.created_at DESC 
             LIMIT 5
-        `).all(userId);
+        `, [userId]);
 
-        // Fetch favorite categories
-        const favCategories = db.prepare(`
+        const [favRows] = await pool.query(`
             SELECT b.category, COUNT(*) as count 
             FROM reviews r 
             JOIN books b ON r.book_id = b.id 
@@ -37,9 +36,9 @@ router.get('/:id', (req, res) => {
             GROUP BY b.category 
             ORDER BY count DESC 
             LIMIT 1
-        `).all(userId).map(c => c.category);
+        `, [userId]);
+        const favCategories = favRows.map(c => c.category);
 
-        // Calculate member rank
         let memberRank = 'Thành viên mới';
         if (reviewCount >= 15) {
             memberRank = 'Top Reviewer';

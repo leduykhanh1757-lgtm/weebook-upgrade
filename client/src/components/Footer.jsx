@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { marketingAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import styles from './Footer.module.css';
+import logoImg from '../assets/images/logo.png';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ const Footer = () => {
     <footer className={styles.footer}>
       <div className={`container ${styles.footerMain}`}>
         <div className={styles.aboutUs}>
-          <img src="/src/assets/images/logo.png" alt="BookSelf Logo" className={styles.footerLogo} />
+          <img src={logoImg} alt="BookSelf Logo" className={styles.footerLogo} />
           <p>Công ty cổ phần sách BookSelf</p>
           <p><strong>Bạn cần hỗ trợ? Gọi chúng tôi 24/7</strong></p>
           <p className={styles.phoneNumber}>0912 913 914</p>
@@ -74,9 +75,9 @@ const Footer = () => {
           </form>
           <p className={styles.socialTitle}>Theo dõi chúng tôi</p>
           <div className={styles.socialIcons}>
-            <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook-f"></i></a>
-            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer"><i className="fab fa-youtube"></i></a>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i className="fa-brands fa-facebook-f"></i></a>
+            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="Youtube"><i className="fa-brands fa-youtube"></i></a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i className="fa-brands fa-instagram"></i></a>
           </div>
         </div>
       </div>

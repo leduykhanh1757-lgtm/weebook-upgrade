@@ -7,7 +7,7 @@
   -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  padding: 15px 0;
+  padding: 12px 0;
   transition: all var(--transition-normal);
 }
 
@@ -15,43 +15,52 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
 }
 
 .leftSection {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 30px;
+  flex-shrink: 0;
 }
 
 .brandSection .logo {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  text-decoration: none;
 }
 
-.brandSection img {
-  height: 45px;
+.logoImg {
+  height: 40px;
   width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .brandName {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.7rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--primary-color);
   letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .navLinks {
   display: flex;
-  gap: 30px;
+  align-items: center;
+  gap: 24px;
 }
 
 .navLinks a {
   font-weight: 500;
   color: var(--text-muted);
   position: relative;
-  padding: 5px 0;
+  padding: 6px 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .navLinks a:hover {
@@ -76,13 +85,14 @@
 
 .searchContainer {
   flex: 1;
-  max-width: 400px;
-  margin: 0 30px;
+  max-width: 460px;
+  margin: 0 15px;
   position: relative;
 }
 
 .searchBar {
   display: flex;
+  align-items: center;
   background: #f8fafc;
   border-radius: 999px;
   border: 1px solid var(--border-color);
@@ -93,17 +103,19 @@
 .searchBar:focus-within {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  background: #ffffff;
 }
 
 .searchInput {
   flex: 1;
+  min-width: 0;
   border: none;
-  padding: 0 20px;
+  padding: 10px 18px;
   background: transparent;
   outline: none;
   color: var(--text-main);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .searchInput::placeholder {
@@ -111,7 +123,8 @@
 }
 
 .searchBtn {
-  width: 60px;
+  width: 48px;
+  height: 40px;
   background: var(--primary-color);
   color: white;
   border: none;
@@ -120,25 +133,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .searchBtn:hover {
-  background: var(--primary-dark);
+  background: var(--primary-hover);
 }
 
 .searchDropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: slideUp 0.2s ease-out forwards;
 }
 
 .searchDropdownMessage {
@@ -156,7 +170,7 @@
 .searchResultItem {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   padding: 10px 15px;
   border-bottom: 1px solid var(--border-color);
   transition: background-color var(--transition-fast);
@@ -173,24 +187,24 @@
 }
 
 .searchResultImage {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
+  width: 38px;
+  height: 46px;
+  object-fit: cover;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  padding: 2px;
   background: white;
+  flex-shrink: 0;
 }
 
 .searchResultInfo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   overflow: hidden;
 }
 
 .searchResultInfo h4 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -198,18 +212,18 @@
 }
 
 .searchResultPrice {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--danger-color);
 }
 
 .searchViewAll {
   display: block;
-  padding: 12px 15px;
+  padding: 10px 15px;
   text-align: center;
   color: var(--primary-color);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background: #f8fafc;
   transition: background-color var(--transition-fast);
 }
@@ -221,26 +235,28 @@
 .headerRight {
   display: flex;
   align-items: center;
-  gap: 25px;
+  gap: 20px;
+  flex-shrink: 0;
 }
 
 .openingHours {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
+  line-height: 1.2;
 }
 
 .openingHours i {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: var(--primary-color);
 }
 
 .userActions {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .accountMenu {
@@ -248,60 +264,95 @@
 }
 
 .actionIcon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   color: var(--text-main);
   font-weight: 500;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: var(--border-radius-md);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  background: transparent;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.actionIcon i {
+  font-size: 1.1rem;
+  color: var(--primary-color);
 }
 
 .actionIcon:hover {
-  background-color: var(--bg-main);
+  background-color: #f1f5f9;
   color: var(--primary-color);
+}
+
+.userAvatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--primary-color);
+}
+
+.actionText {
+  white-space: nowrap;
 }
 
 .accountDropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
   background: var(--bg-card);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
-  min-width: 220px;
-  padding: 10px 0;
-  margin-top: 10px;
+  min-width: 210px;
+  padding: 8px 0;
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px);
   transition: all var(--transition-normal);
+  z-index: 1050;
 }
 
 .accountDropdown.show {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
-  animation: slideUp 0.2s ease-out forwards;
 }
 
 .accountDropdown a,
 .accountDropdown button {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
+  gap: 10px;
+  padding: 10px 18px;
   width: 100%;
   text-align: left;
   color: var(--text-main);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color var(--transition-fast);
+}
+
+.accountDropdown a i,
+.accountDropdown button i {
+  font-size: 1rem;
+  width: 18px;
+  text-align: center;
+  color: var(--text-muted);
 }
 
 .accountDropdown a:hover,
 .accountDropdown button:hover {
-  background-color: var(--bg-main);
+  background-color: #f8fafc;
+  color: var(--primary-color);
+}
+
+.accountDropdown a:hover i,
+.accountDropdown button:hover i {
   color: var(--primary-color);
 }
 
@@ -311,18 +362,36 @@
 
 .cartCount {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -4px;
+  right: -4px;
   background: var(--danger-color);
   color: white;
-  font-size: 0.75rem;
-  font-weight: bold;
-  height: 20px;
-  min-width: 20px;
-  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  height: 18px;
+  min-width: 18px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 4px;
   box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4);
+}
+
+@media (max-width: 992px) {
+  .openingHours {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .headerMain {
+    flex-wrap: wrap;
+  }
+  .searchContainer {
+    order: 3;
+    max-width: 100%;
+    margin: 10px 0 0 0;
+    width: 100%;
+  }
 }

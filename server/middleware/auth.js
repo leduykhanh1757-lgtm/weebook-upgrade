@@ -1,6 +1,6 @@
 // ========== JWT AUTHENTICATION MIDDLEWARE ========== //
 const jwt = require('jsonwebtoken');
-const { getDb } = require('../database');
+const { pool } = require('../database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'bookself-secret-key-2024';
 const JWT_EXPIRES_IN = '7d';
@@ -15,7 +15,7 @@ function generateToken(user) {
 }
 
 // Required authentication middleware
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -26,8 +26,11 @@ function requireAuth(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const db = getDb();
-        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(decoded.id);
+        const [rows] = await pool.query(
+            'SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?',
+            [decoded.id]
+        );
+        const user = rows[0];
 
         if (!user) {
             return res.status(401).json({ error: 'Người dùng không tồn tại!' });
@@ -41,7 +44,7 @@ function requireAuth(req, res, next) {
 }
 
 // Optional authentication - sets req.user if token present, but doesn't block
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -53,9 +56,11 @@ function optionalAuth(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const db = getDb();
-        const user = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(decoded.id);
-        req.user = user || null;
+        const [rows] = await pool.query(
+            'SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?',
+            [decoded.id]
+        );
+        req.user = rows[0] || null;
     } catch (err) {
         req.user = null;
     }

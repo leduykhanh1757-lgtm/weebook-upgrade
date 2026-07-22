@@ -1,256 +1,283 @@
-// ========== DATABASE SETUP ========== //
-const Database = require('better-sqlite3');
-const path = require('path');
+// ========== MYSQL DATABASE SETUP ========== //
+require('dotenv').config();
+const mysql = require('mysql2/promise');
 
-const DB_PATH = path.join(__dirname, 'bookself.db');
+const pool = mysql.createPool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'weebook_db',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+    multipleStatements: true
+});
 
-let db;
+async function initializeDatabase() {
+    try {
+        // Test initial connection without database to create DB if missing
+        const tempConn = await mysql.createConnection({
+            host: process.env.DB_HOST || 'localhost',
+            port: process.env.DB_PORT || 3306,
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || '',
+            multipleStatements: true
+        });
 
-function getDb() {
-    if (!db) {
-        db = new Database(DB_PATH);
-        db.pragma('journal_mode = WAL');
-        db.pragma('foreign_keys = ON');
+        const dbName = process.env.DB_NAME || 'weebook_db';
+        await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+        await tempConn.end();
+
+        // Run DDL to create tables if missing
+        const schemaSql = `
+        USE \`${dbName}\`;
+
+        CREATE TABLE IF NOT EXISTS \`users\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`name\` VARCHAR(255) NOT NULL,
+            \`email\` VARCHAR(255) NOT NULL UNIQUE,
+            \`phone\` VARCHAR(50),
+            \`password\` VARCHAR(255) NOT NULL,
+            \`role\` VARCHAR(20) DEFAULT 'user',
+            \`birthday\` VARCHAR(50),
+            \`address\` TEXT,
+            \`gender\` VARCHAR(20) DEFAULT 'Khác',
+            \`avatar\` LONGTEXT,
+            \`email_verified\` TINYINT DEFAULT 1,
+            \`phone_verified\` TINYINT DEFAULT 0,
+            \`newsletter_subscribed\` TINYINT DEFAULT 1,
+            \`helpful_votes\` INT DEFAULT 0,
+            \`status\` VARCHAR(20) DEFAULT 'active',
+            \`reset_code\` VARCHAR(100),
+            \`reset_code_expires\` VARCHAR(100),
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            \`updated_at\` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`subscribers\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`email\` VARCHAR(255) NOT NULL UNIQUE,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`categories\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`name\` VARCHAR(255) NOT NULL,
+            \`slug\` VARCHAR(255) NOT NULL UNIQUE,
+            \`parent_id\` INT DEFAULT NULL,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`authors\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`name\` VARCHAR(255) NOT NULL,
+            \`bio\` TEXT,
+            \`image\` TEXT,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`publishers\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`name\` VARCHAR(255) NOT NULL,
+            \`description\` TEXT,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`books\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`title\` VARCHAR(255) NOT NULL,
+            \`slug\` VARCHAR(255),
+            \`author\` VARCHAR(255) NOT NULL,
+            \`publisher\` VARCHAR(255),
+            \`publish_date\` VARCHAR(50),
+            \`category\` VARCHAR(100) NOT NULL,
+            \`subcategory\` VARCHAR(100),
+            \`price\` INT NOT NULL,
+            \`original_price\` INT,
+            \`import_price\` INT DEFAULT 0,
+            \`discount\` INT DEFAULT 0,
+            \`isbn\` VARCHAR(100),
+            \`pages\` INT,
+            \`language\` VARCHAR(50),
+            \`format\` VARCHAR(50),
+            \`weight\` VARCHAR(50),
+            \`dimensions\` VARCHAR(50),
+            \`stock\` INT DEFAULT 0,
+            \`rating\` DOUBLE DEFAULT 0,
+            \`review_count\` INT DEFAULT 0,
+            \`images\` LONGTEXT,
+            \`description\` LONGTEXT,
+            \`tags\` LONGTEXT,
+            \`featured\` TINYINT DEFAULT 0,
+            \`new_release\` TINYINT DEFAULT 0,
+            \`is_visible\` TINYINT DEFAULT 1,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX \`idx_books_category\` (\`category\`),
+            INDEX \`idx_books_subcategory\` (\`subcategory\`),
+            INDEX \`idx_books_featured\` (\`featured\`),
+            INDEX \`idx_books_new_release\` (\`new_release\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`cart\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`user_id\` INT NOT NULL,
+            \`book_id\` INT NOT NULL,
+            \`quantity\` INT DEFAULT 1,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE,
+            FOREIGN KEY (\`book_id\`) REFERENCES \`books\`(\`id\`) ON DELETE CASCADE,
+            UNIQUE KEY \`unique_user_book\` (\`user_id\`, \`book_id\`),
+            INDEX \`idx_cart_user\` (\`user_id\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`wishlist\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`user_id\` INT NOT NULL,
+            \`book_id\` INT NOT NULL,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE,
+            FOREIGN KEY (\`book_id\`) REFERENCES \`books\`(\`id\`) ON DELETE CASCADE,
+            UNIQUE KEY \`unique_wishlist\` (\`user_id\`, \`book_id\`),
+            INDEX \`idx_wishlist_user\` (\`user_id\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`orders\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`user_id\` INT,
+            \`order_code\` VARCHAR(100) UNIQUE,
+            \`full_name\` VARCHAR(255) NOT NULL,
+            \`email\` VARCHAR(255),
+            \`phone\` VARCHAR(50) NOT NULL,
+            \`address\` TEXT NOT NULL,
+            \`city\` VARCHAR(100),
+            \`district\` VARCHAR(100),
+            \`ward\` VARCHAR(100),
+            \`notes\` TEXT,
+            \`subtotal\` DOUBLE NOT NULL,
+            \`shipping_cost\` DOUBLE NOT NULL,
+            \`discount_amount\` DOUBLE DEFAULT 0,
+            \`total\` DOUBLE NOT NULL,
+            \`status\` VARCHAR(50) DEFAULT 'pending',
+            \`payment_method\` VARCHAR(50) NOT NULL,
+            \`payment_status\` VARCHAR(50) DEFAULT 'unpaid',
+            \`coupon_code\` VARCHAR(50),
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            \`updated_at\` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`),
+            INDEX \`idx_orders_user\` (\`user_id\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`order_items\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`order_id\` INT NOT NULL,
+            \`book_id\` INT NOT NULL,
+            \`title\` VARCHAR(255) NOT NULL,
+            \`author\` VARCHAR(255),
+            \`price\` INT NOT NULL,
+            \`quantity\` INT NOT NULL,
+            \`total\` INT NOT NULL,
+            \`image\` TEXT,
+            FOREIGN KEY (\`order_id\`) REFERENCES \`orders\`(\`id\`) ON DELETE CASCADE,
+            FOREIGN KEY (\`book_id\`) REFERENCES \`books\`(\`id\`),
+            INDEX \`idx_order_items_order\` (\`order_id\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`reviews\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`user_id\` INT,
+            \`book_id\` INT NOT NULL,
+            \`rating\` INT NOT NULL CHECK (\`rating\` >= 1 AND \`rating\` <= 5),
+            \`comment\` TEXT,
+            \`status\` VARCHAR(50) DEFAULT 'approved',
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE SET NULL,
+            FOREIGN KEY (\`book_id\`) REFERENCES \`books\`(\`id\`) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS \`addresses\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`user_id\` INT,
+            \`receiver_name\` VARCHAR(255) NOT NULL,
+            \`phone\` VARCHAR(50) NOT NULL,
+            \`full_address\` TEXT NOT NULL,
+            \`is_default\` TINYINT DEFAULT 0,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`),
+            INDEX \`idx_addresses_user\` (\`user_id\`)
+        );
+
+        CREATE TABLE IF NOT EXISTS \`coupons\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`code\` VARCHAR(50) NOT NULL UNIQUE,
+            \`discount_type\` VARCHAR(20) NOT NULL,
+            \`discount_value\` DOUBLE NOT NULL,
+            \`min_order_value\` DOUBLE DEFAULT 0,
+            \`max_uses\` INT DEFAULT NULL,
+            \`used_count\` INT DEFAULT 0,
+            \`start_date\` VARCHAR(50),
+            \`end_date\` VARCHAR(50),
+            \`status\` VARCHAR(20) DEFAULT 'active',
+            \`user_email\` VARCHAR(255),
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`banners\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`image_url\` TEXT NOT NULL,
+            \`title\` VARCHAR(255),
+            \`description\` TEXT,
+            \`link_url\` TEXT,
+            \`is_active\` TINYINT DEFAULT 1,
+            \`sort_order\` INT DEFAULT 0,
+            \`created_at\` DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS \`settings\` (
+            \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+            \`key\` VARCHAR(100) NOT NULL UNIQUE,
+            \`value\` TEXT,
+            \`updated_at\` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+        `;
+
+        await pool.query(schemaSql);
+
+        // Seed basic categories if empty
+        const [catRows] = await pool.query('SELECT COUNT(*) as count FROM categories');
+        if (catRows[0].count === 0) {
+            await pool.query(`
+                INSERT INTO categories (name, slug) VALUES 
+                ('Văn học', 'van-hoc'),
+                ('Kinh tế', 'kinh-te'),
+                ('Kỹ năng', 'ky-nang'),
+                ('Thiếu nhi', 'thieu-nhi'),
+                ('Ngoại ngữ', 'ngoai-ngu');
+            `);
+        }
+
+        // Seed default settings if empty
+        const [settingRows] = await pool.query('SELECT COUNT(*) as count FROM settings');
+        if (settingRows[0].count === 0) {
+            await pool.query(`
+                INSERT INTO settings (\`key\`, \`value\`) VALUES 
+                ('store_email', 'support@bookself.vn'),
+                ('store_phone', '1900 1508'),
+                ('store_address', '123 Đường Sách, Quận 1, TP.HCM'),
+                ('shipping_fee', '30000');
+            `);
+        }
+
+        console.log('✅ MySQL Database & Tables initialized successfully');
+    } catch (err) {
+        console.error('❌ Failed to initialize MySQL Database:', err);
     }
-    return db;
 }
 
-function initializeDatabase() {
-    const db = getDb();
-
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            phone TEXT,
-            password TEXT NOT NULL,
-            role TEXT DEFAULT 'user',
-            birthday TEXT,
-            address TEXT,
-            gender TEXT DEFAULT 'Khác',
-            avatar TEXT,
-            email_verified INTEGER DEFAULT 1,
-            phone_verified INTEGER DEFAULT 0,
-            newsletter_subscribed INTEGER DEFAULT 1,
-            helpful_votes INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'active',
-            reset_code TEXT,
-            reset_code_expires TEXT,
-            created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS subscribers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            slug TEXT UNIQUE NOT NULL,
-            parent_id INTEGER DEFAULT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS authors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            bio TEXT,
-            image TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS publishers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS books (
-            id INTEGER PRIMARY KEY,
-            title TEXT NOT NULL,
-            slug TEXT,
-            author TEXT NOT NULL,
-            publisher TEXT,
-            publish_date TEXT,
-            category TEXT NOT NULL,
-            subcategory TEXT,
-            price INTEGER NOT NULL,
-            original_price INTEGER,
-            import_price INTEGER DEFAULT 0,
-            discount INTEGER DEFAULT 0,
-            isbn TEXT,
-            pages INTEGER,
-            language TEXT,
-            format TEXT,
-            weight TEXT,
-            dimensions TEXT,
-            stock INTEGER DEFAULT 0,
-            rating REAL DEFAULT 0,
-            review_count INTEGER DEFAULT 0,
-            images TEXT, -- JSON array
-            description TEXT,
-            tags TEXT, -- JSON array
-            featured INTEGER DEFAULT 0,
-            new_release INTEGER DEFAULT 0,
-            is_visible INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS cart (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            book_id INTEGER NOT NULL,
-            quantity INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-            UNIQUE(user_id, book_id)
-        );
-
-        CREATE TABLE IF NOT EXISTS wishlist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            book_id INTEGER NOT NULL,
-            created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-            UNIQUE(user_id, book_id)
-        );
-
-        CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            order_code TEXT UNIQUE,
-            full_name TEXT NOT NULL,
-            email TEXT,
-            phone TEXT NOT NULL,
-            address TEXT NOT NULL,
-            city TEXT,
-            district TEXT,
-            ward TEXT,
-            notes TEXT,
-            subtotal REAL NOT NULL,
-            shipping_cost REAL NOT NULL,
-            discount_amount REAL DEFAULT 0,
-            total REAL NOT NULL,
-            status TEXT DEFAULT 'pending',
-            payment_method TEXT NOT NULL,
-            payment_status TEXT DEFAULT 'unpaid',
-            coupon_code TEXT,
-            created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        );
-
-        CREATE TABLE IF NOT EXISTS order_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_id INTEGER NOT NULL,
-            book_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            author TEXT,
-            price INTEGER NOT NULL,
-            quantity INTEGER NOT NULL,
-            total INTEGER NOT NULL,
-            image TEXT,
-            FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-            FOREIGN KEY (book_id) REFERENCES books(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS reviews (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            book_id INTEGER NOT NULL,
-            rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-            comment TEXT,
-            status TEXT DEFAULT 'approved',
-            created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS addresses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            receiver_name TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            full_address TEXT NOT NULL,
-            is_default INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        );
-
-        CREATE TABLE IF NOT EXISTS coupons (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            code TEXT UNIQUE NOT NULL,
-            discount_type TEXT NOT NULL, -- 'percent' or 'fixed'
-            discount_value REAL NOT NULL,
-            min_order_value REAL DEFAULT 0,
-            max_uses INTEGER DEFAULT NULL,
-            used_count INTEGER DEFAULT 0,
-            start_date TEXT,
-            end_date TEXT,
-            status TEXT DEFAULT 'active',
-            user_email TEXT, -- NULL for global, email for private
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS banners (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            image_url TEXT NOT NULL,
-            title TEXT,
-            description TEXT,
-            link_url TEXT,
-            is_active INTEGER DEFAULT 1,
-            sort_order INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT UNIQUE NOT NULL,
-            value TEXT,
-            updated_at TEXT DEFAULT (datetime('now'))
-        );
-
-        -- Indexes for performance
-        CREATE INDEX IF NOT EXISTS idx_books_category ON books(category);
-        CREATE INDEX IF NOT EXISTS idx_books_subcategory ON books(subcategory);
-        CREATE INDEX IF NOT EXISTS idx_books_featured ON books(featured);
-        CREATE INDEX IF NOT EXISTS idx_books_new_release ON books(new_release);
-        CREATE INDEX IF NOT EXISTS idx_cart_user ON cart(user_id);
-        CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlist(user_id);
-        CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
-        CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
-        CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
-    `);
-
-    // Seed basic categories if empty
-    const catCount = db.prepare('SELECT COUNT(*) as count FROM categories').get().count;
-    if (catCount === 0) {
-        const insertCat = db.prepare('INSERT INTO categories (name, slug) VALUES (?, ?)');
-        insertCat.run('Văn học', 'van-hoc');
-        insertCat.run('Kinh tế', 'kinh-te');
-        insertCat.run('Kỹ năng', 'ky-nang');
-        insertCat.run('Thiếu nhi', 'thieu-nhi');
-        insertCat.run('Ngoại ngữ', 'ngoai-ngu');
-    }
-
-    // Seed default settings if empty
-    const settingsCount = db.prepare('SELECT COUNT(*) as count FROM settings').get().count;
-    if (settingsCount === 0) {
-        const insertSetting = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)');
-        insertSetting.run('store_email', 'support@bookself.vn');
-        insertSetting.run('store_phone', '1900 1508');
-        insertSetting.run('store_address', '123 Đường Sách, Quận 1, TP.HCM');
-        insertSetting.run('shipping_fee', '30000');
-    }
-
-    console.log('✅ Database initialized successfully');
+// Helper query function for convenience
+async function query(sql, params = []) {
+    const [results] = await pool.query(sql, params);
+    return results;
 }
 
-module.exports = { getDb, initializeDatabase };
+module.exports = { pool, query, initializeDatabase };

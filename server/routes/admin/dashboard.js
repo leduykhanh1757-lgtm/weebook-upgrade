@@ -1,18 +1,17 @@
-// ========== ADMIN — DASHBOARD ========== //
+// ========== ADMIN — DASHBOARD (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../../database');
+const { pool } = require('../../database');
 const { ORDER_STATUS } = require('../../constants/statusEnum');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const db = getDb();
-
         // 1. Revenue calculations from completed orders
-        const completedOrdersData = db.prepare(
-            `SELECT total, created_at FROM orders WHERE status = ?`
-        ).all(ORDER_STATUS.COMPLETED);
+        const [completedOrdersData] = await pool.query(
+            `SELECT total, created_at FROM orders WHERE status = ?`,
+            [ORDER_STATUS.COMPLETED]
+        );
 
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -45,32 +44,40 @@ router.get('/', (req, res) => {
             previous === 0 ? (current > 0 ? 100 : 0) : Math.round(((current - previous) / previous) * 100);
 
         // 2. Order stats
-        const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get().count;
-        const pendingOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get(ORDER_STATUS.PENDING).count;
-        const processingOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get(ORDER_STATUS.PROCESSING).count;
-        const completedCount = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get(ORDER_STATUS.COMPLETED).count;
-        const canceledOrders = db.prepare('SELECT COUNT(*) as count FROM orders WHERE status = ?').get(ORDER_STATUS.CANCELLED).count;
+        const [totalOrderRows] = await pool.query('SELECT COUNT(*) as count FROM orders');
+        const [pendingOrderRows] = await pool.query('SELECT COUNT(*) as count FROM orders WHERE status = ?', [ORDER_STATUS.PENDING]);
+        const [processingOrderRows] = await pool.query('SELECT COUNT(*) as count FROM orders WHERE status = ?', [ORDER_STATUS.PROCESSING]);
+        const [completedRows] = await pool.query('SELECT COUNT(*) as count FROM orders WHERE status = ?', [ORDER_STATUS.COMPLETED]);
+        const [canceledOrderRows] = await pool.query('SELECT COUNT(*) as count FROM orders WHERE status = ?', [ORDER_STATUS.CANCELLED]);
+
+        const totalOrders = totalOrderRows[0].count;
+        const pendingOrders = pendingOrderRows[0].count;
+        const processingOrders = processingOrderRows[0].count;
+        const completedCount = completedRows[0].count;
+        const canceledOrders = canceledOrderRows[0].count;
 
         // 3. User stats
-        const totalUsers = db.prepare("SELECT COUNT(*) as count FROM users WHERE role != 'admin'").get().count;
+        const [userRows] = await pool.query("SELECT COUNT(*) as count FROM users WHERE role != 'admin'");
+        const totalUsers = userRows[0].count;
 
         // 4. Alerts
-        const lowStockBooks = db.prepare('SELECT id, title, stock, images FROM books WHERE stock < 5 ORDER BY stock ASC LIMIT 10').all();
-        const stagnantOrders = db.prepare(
+        const [lowStockBooks] = await pool.query('SELECT id, title, stock, images FROM books WHERE stock < 5 ORDER BY stock ASC LIMIT 10');
+        const [stagnantOrders] = await pool.query(
             `SELECT id, order_code, created_at, status, total FROM orders 
-             WHERE status IN (?, ?) AND datetime(created_at) <= datetime('now', '-3 days') 
-             ORDER BY created_at ASC`
-        ).all(ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING);
+             WHERE status IN (?, ?) AND created_at <= DATE_SUB(NOW(), INTERVAL 3 DAY) 
+             ORDER BY created_at ASC`,
+            [ORDER_STATUS.PENDING, ORDER_STATUS.PROCESSING]
+        );
 
         // 5. Bestsellers (this month)
-        const bestsellers = db.prepare(`
+        const [bestsellers] = await pool.query(`
             SELECT b.id, b.title, SUM(oi.quantity) as sold_count, b.images
             FROM order_items oi
             JOIN orders o ON oi.order_id = o.id
             JOIN books b ON oi.book_id = b.id
-            WHERE o.status = ? AND datetime(o.created_at) >= datetime('now', 'start of month')
-            GROUP BY b.id ORDER BY sold_count DESC LIMIT 5
-        `).all(ORDER_STATUS.COMPLETED);
+            WHERE o.status = ? AND o.created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+            GROUP BY b.id, b.title, b.images ORDER BY sold_count DESC LIMIT 5
+        `, [ORDER_STATUS.COMPLETED]);
 
         res.json({
             revenue: {

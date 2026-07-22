@@ -1,33 +1,40 @@
-// ========== CART ROUTES ========== //
+// ========== CART ROUTES (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../database');
+const { pool } = require('../database');
 const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
 // GET /api/cart
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
-        const items = db.prepare(`
+        const [items] = await pool.query(`
             SELECT c.id, c.book_id, c.quantity, 
                    b.title, b.author, b.price, b.original_price, b.images, b.stock
             FROM cart c 
             JOIN books b ON c.book_id = b.id 
             WHERE c.user_id = ?
             ORDER BY c.created_at DESC
-        `).all(req.user.id);
+        `, [req.user.id]);
 
-        const cartItems = items.map(item => ({
-            id: item.book_id,
-            quantity: item.quantity,
-            title: item.title,
-            author: item.author,
-            price: item.price,
-            originalPrice: item.original_price,
-            images: JSON.parse(item.images || '[]'),
-            stock: item.stock
-        }));
+        const cartItems = items.map(item => {
+            let images = [];
+            try {
+                images = typeof item.images === 'string' ? JSON.parse(item.images || '[]') : (item.images || []);
+            } catch (e) {
+                images = [];
+            }
+            return {
+                id: item.book_id,
+                quantity: item.quantity,
+                title: item.title,
+                author: item.author,
+                price: item.price,
+                originalPrice: item.original_price,
+                images,
+                stock: item.stock
+            };
+        });
 
         const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -40,7 +47,7 @@ router.get('/', requireAuth, (req, res) => {
 });
 
 // POST /api/cart
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { bookId, quantity = 1 } = req.body;
 
@@ -48,10 +55,8 @@ router.post('/', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Thiếu thông tin sản phẩm!' });
         }
 
-        const db = getDb();
-
-        // Check book exists
-        const book = db.prepare('SELECT id, title, stock FROM books WHERE id = ?').get(parseInt(bookId));
+        const [bookRows] = await pool.query('SELECT id, title, stock FROM books WHERE id = ?', [parseInt(bookId)]);
+        const book = bookRows[0];
         if (!book) {
             return res.status(404).json({ error: 'Không tìm thấy sản phẩm!' });
         }
@@ -60,13 +65,13 @@ router.post('/', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Số lượng vượt quá tồn kho!' });
         }
 
-        // Upsert cart item
-        const existing = db.prepare('SELECT id, quantity FROM cart WHERE user_id = ? AND book_id = ?').get(req.user.id, parseInt(bookId));
+        const [existingRows] = await pool.query('SELECT id, quantity FROM cart WHERE user_id = ? AND book_id = ?', [req.user.id, parseInt(bookId)]);
+        const existing = existingRows[0];
 
         if (existing) {
-            db.prepare('UPDATE cart SET quantity = quantity + ? WHERE id = ?').run(quantity, existing.id);
+            await pool.query('UPDATE cart SET quantity = quantity + ? WHERE id = ?', [quantity, existing.id]);
         } else {
-            db.prepare('INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, ?)').run(req.user.id, parseInt(bookId), quantity);
+            await pool.query('INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, ?)', [req.user.id, parseInt(bookId), quantity]);
         }
 
         res.json({ message: `Đã thêm "${book.title}" vào giỏ hàng!` });
@@ -77,19 +82,17 @@ router.post('/', requireAuth, (req, res) => {
 });
 
 // PUT /api/cart/:bookId
-router.put('/:bookId', requireAuth, (req, res) => {
+router.put('/:bookId', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
         const { quantity } = req.body;
         const bookId = parseInt(req.params.bookId);
 
         if (quantity <= 0) {
-            // Remove item
-            db.prepare('DELETE FROM cart WHERE user_id = ? AND book_id = ?').run(req.user.id, bookId);
+            await pool.query('DELETE FROM cart WHERE user_id = ? AND book_id = ?', [req.user.id, bookId]);
             return res.json({ message: 'Đã xóa sản phẩm khỏi giỏ hàng!' });
         }
 
-        db.prepare('UPDATE cart SET quantity = ? WHERE user_id = ? AND book_id = ?').run(quantity, req.user.id, bookId);
+        await pool.query('UPDATE cart SET quantity = ? WHERE user_id = ? AND book_id = ?', [quantity, req.user.id, bookId]);
 
         res.json({ message: 'Cập nhật giỏ hàng thành công!' });
     } catch (err) {
@@ -99,13 +102,13 @@ router.put('/:bookId', requireAuth, (req, res) => {
 });
 
 // DELETE /api/cart/:bookId
-router.delete('/:bookId', requireAuth, (req, res) => {
+router.delete('/:bookId', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
         const bookId = parseInt(req.params.bookId);
 
-        const book = db.prepare('SELECT title FROM books WHERE id = ?').get(bookId);
-        db.prepare('DELETE FROM cart WHERE user_id = ? AND book_id = ?').run(req.user.id, bookId);
+        const [bookRows] = await pool.query('SELECT title FROM books WHERE id = ?', [bookId]);
+        const book = bookRows[0];
+        await pool.query('DELETE FROM cart WHERE user_id = ? AND book_id = ?', [req.user.id, bookId]);
 
         res.json({ message: book ? `Đã xóa "${book.title}" khỏi giỏ hàng!` : 'Đã xóa sản phẩm!' });
     } catch (err) {

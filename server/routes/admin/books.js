@@ -1,14 +1,13 @@
-// ========== ADMIN — BOOKS MANAGEMENT ========== //
+// ========== ADMIN — BOOKS MANAGEMENT (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../../database');
+const { pool } = require('../../database');
 
 const router = express.Router();
 
 // GET /admin/books
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const db = getDb();
-        const books = db.prepare('SELECT * FROM books ORDER BY created_at DESC').all();
+        const [books] = await pool.query('SELECT * FROM books ORDER BY created_at DESC');
         res.json({ books });
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server' });
@@ -16,7 +15,7 @@ router.get('/', (req, res) => {
 });
 
 // POST /admin/books
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const {
             title, author, publisher, publish_date,
@@ -27,11 +26,10 @@ router.post('/', (req, res) => {
             description, images
         } = req.body;
 
-        const db = getDb();
         const slug = title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '') + '-' + Date.now();
         const imagesStr = images && images.length > 0 ? JSON.stringify(images) : '[]';
 
-        const stmt = db.prepare(`
+        const [result] = await pool.query(`
             INSERT INTO books (
                 title, author, publisher, publish_date,
                 category, subcategory,
@@ -40,18 +38,16 @@ router.post('/', (req, res) => {
                 stock, is_visible,
                 description, images, slug
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        const result = stmt.run(
+        `, [
             title, author, publisher || '', publish_date || '',
             category || 'other', subcategory || '',
             price || 0, original_price || price, import_price || 0, discount || 0,
             isbn || '', pages || 0, format || '', weight || '',
             stock || 0, is_visible !== undefined ? is_visible : 1,
             description || '', imagesStr, slug
-        );
+        ]);
 
-        res.status(201).json({ message: 'Thêm sách thành công', id: result.lastInsertRowid });
+        res.status(201).json({ message: 'Thêm sách thành công', id: result.insertId });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Lỗi server' });
@@ -59,7 +55,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /admin/books/:id
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
         const {
             title, author, publisher, publish_date,
@@ -70,10 +66,10 @@ router.put('/:id', (req, res) => {
             description, images
         } = req.body;
 
-        const db = getDb();
         const id = req.params.id;
 
-        const book = db.prepare('SELECT * FROM books WHERE id = ?').get(id);
+        const [bookRows] = await pool.query('SELECT * FROM books WHERE id = ?', [id]);
+        const book = bookRows[0];
         if (!book) return res.status(404).json({ error: 'Không tìm thấy sách' });
 
         let imagesStr = book.images;
@@ -81,7 +77,7 @@ router.put('/:id', (req, res) => {
             imagesStr = images && images.length > 0 ? JSON.stringify(images) : '[]';
         }
 
-        const stmt = db.prepare(`
+        await pool.query(`
             UPDATE books SET
                 title = COALESCE(?, title), author = COALESCE(?, author),
                 publisher = COALESCE(?, publisher), publish_date = COALESCE(?, publish_date),
@@ -93,16 +89,14 @@ router.put('/:id', (req, res) => {
                 stock = COALESCE(?, stock), is_visible = COALESCE(?, is_visible),
                 description = COALESCE(?, description), images = ?
             WHERE id = ?
-        `);
-
-        stmt.run(
+        `, [
             title, author, publisher, publish_date,
             category, subcategory,
             price, original_price, import_price, discount,
             isbn, pages, format, weight,
             stock, is_visible,
             description, imagesStr, id
-        );
+        ]);
 
         res.json({ message: 'Cập nhật sách thành công' });
     } catch (err) {

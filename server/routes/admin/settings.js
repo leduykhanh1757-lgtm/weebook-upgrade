@@ -1,13 +1,12 @@
-// ========== ADMIN — SETTINGS MANAGEMENT ========== //
+// ========== ADMIN — SETTINGS MANAGEMENT (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../../database');
+const { pool } = require('../../database');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const db = getDb();
-        const settings = db.prepare('SELECT key, value FROM settings').all();
+        const [settings] = await pool.query('SELECT `key`, `value` FROM settings');
         const settingsObj = {};
         settings.forEach(s => { settingsObj[s.key] = s.value; });
         res.json(settingsObj);
@@ -16,18 +15,12 @@ router.get('/', (req, res) => {
     }
 });
 
-router.put('/', (req, res) => {
+router.put('/', async (req, res) => {
     try {
-        const db = getDb();
         const settings = req.body;
-        const stmt = db.prepare("UPDATE settings SET value = ?, updated_at = datetime('now') WHERE key = ?");
-
-        db.transaction(() => {
-            for (const [key, value] of Object.entries(settings)) {
-                stmt.run(value, key);
-            }
-        })();
-
+        for (const [key, value] of Object.entries(settings)) {
+            await pool.query("UPDATE settings SET `value` = ?, updated_at = NOW() WHERE `key` = ?", [value, key]);
+        }
         res.json({ message: 'Cập nhật cấu hình thành công' });
     } catch (err) {
         console.error('PUT /settings Error:', err);

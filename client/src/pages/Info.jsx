@@ -5,6 +5,7 @@ import styles from './Info.module.css';
 const infoContent = {
   'huong-dan-mua-hang': {
     title: 'Hướng dẫn mua hàng',
+    icon: 'fa-solid fa-cart-shopping',
     content: (
       <>
         <p>Chào mừng quý khách đến với BookSelf. Để mang lại trải nghiệm mua sắm tiện lợi và dễ dàng nhất, chúng tôi xây dựng quy trình đặt hàng tối ưu chỉ với vài bước cơ bản. Quý khách vui lòng tham khảo chi tiết dưới đây:</p>
@@ -28,6 +29,7 @@ const infoContent = {
   },
   'huong-dan-thanh-toan': {
     title: 'Hướng dẫn thanh toán',
+    icon: 'fa-solid fa-wallet',
     content: (
       <>
         <p>Nhằm mang đến sự linh hoạt tối đa cho khách hàng, BookSelf hiện đang cung cấp nhiều phương thức thanh toán đa dạng và an toàn tuyệt đối:</p>
@@ -54,6 +56,7 @@ const infoContent = {
   },
   'huong-dan-giao-nhan': {
     title: 'Hướng dẫn giao nhận',
+    icon: 'fa-solid fa-truck-fast',
     content: (
       <>
         <p>BookSelf hợp tác với những đơn vị vận chuyển uy tín hàng đầu (Giao Hàng Tiết Kiệm, Giao Hàng Nhanh, Viettel Post...) để đảm bảo sách đến tay quý khách trong thời gian nhanh nhất và tình trạng hoàn hảo nhất.</p>
@@ -76,6 +79,7 @@ const infoContent = {
   },
   'dieu-khoan-dich-vu': {
     title: 'Điều khoản dịch vụ',
+    icon: 'fa-solid fa-file-contract',
     content: (
       <>
         <p>Chào mừng quý khách đến với website thương mại điện tử BookSelf. Khi quý khách truy cập vào trang web của chúng tôi, đồng nghĩa với việc quý khách đã đồng ý với các điều khoản sau đây.</p>
@@ -96,6 +100,7 @@ const infoContent = {
   },
   'chinh-sach-bao-mat': {
     title: 'Chính sách bảo mật',
+    icon: 'fa-solid fa-shield-halved',
     content: (
       <>
         <p>Sự riêng tư và bảo mật thông tin cá nhân của khách hàng là ưu tiên hàng đầu tại BookSelf. Chúng tôi tuân thủ nghiêm ngặt các nguyên tắc bảo mật thông tin theo quy định của pháp luật Việt Nam.</p>
@@ -123,6 +128,7 @@ const infoContent = {
   },
   'chinh-sach-van-chuyen': {
     title: 'Chính sách vận chuyển',
+    icon: 'fa-solid fa-boxes-packing',
     content: (
       <>
         <p>BookSelf áp dụng chính sách vận chuyển minh bạch và hỗ trợ tối đa chi phí cho khách hàng trên toàn quốc.</p>
@@ -143,6 +149,7 @@ const infoContent = {
   },
   'chinh-sach-doi-tra': {
     title: 'Chính sách đổi trả',
+    icon: 'fa-solid fa-rotate-left',
     content: (
       <>
         <p>Để đảm bảo quyền lợi của người tiêu dùng, BookSelf áp dụng chính sách đổi trả hàng hóa linh hoạt và minh bạch với khoảng thời gian lên đến 30 ngày.</p>
@@ -171,6 +178,7 @@ const infoContent = {
   },
   'quy-dinh-su-dung': {
     title: 'Quy định sử dụng',
+    icon: 'fa-solid fa-gavel',
     content: (
       <>
         <p>Văn hóa đọc và môi trường mua sắm trực tuyến lành mạnh là mục tiêu của BookSelf. Bằng việc tạo tài khoản và tham gia vào các hoạt động trên website (viết đánh giá, bình luận), quý khách phải tuân thủ các quy tắc ứng xử sau:</p>
@@ -197,7 +205,7 @@ const Info = () => {
   const { slug } = useParams();
   
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
 
   const pageData = infoContent[slug];
@@ -216,26 +224,52 @@ const Info = () => {
 
   return (
     <div className={`container ${styles.infoPage}`}>
+      {/* Breadcrumb */}
+      <nav className={styles.breadcrumb}>
+        <Link to="/">Trang chủ</Link>
+        <i className="fa-solid fa-chevron-right"></i>
+        <span>Thông tin & Chính sách</span>
+        <i className="fa-solid fa-chevron-right"></i>
+        <span className={styles.currentBreadcrumb}>{pageData.title}</span>
+      </nav>
+
       <div className={styles.infoLayout}>
         <aside className={styles.infoSidebar}>
-          <h3>Danh mục thông tin</h3>
+          <div className={styles.sidebarHeader}>
+            <i className="fa-solid fa-compass"></i>
+            <h3>Danh mục thông tin</h3>
+          </div>
           <ul>
             {Object.keys(infoContent).map(key => (
               <li key={key}>
                 <Link to={`/info/${key}`} className={slug === key ? styles.active : ''}>
-                  {infoContent[key].title}
+                  <i className={infoContent[key].icon}></i>
+                  <span>{infoContent[key].title}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </aside>
         
-        <div className={styles.infoCard}>
-          <h1>{pageData.title}</h1>
+        <article className={styles.infoCard}>
+          <header className={styles.articleHeader}>
+            <div className={styles.headerTitleGroup}>
+              <div className={styles.titleIconBadge}>
+                <i className={pageData.icon}></i>
+              </div>
+              <div>
+                <h1>{pageData.title}</h1>
+                <p className={styles.updateBadge}>
+                  <i className="fa-regular fa-clock"></i> Cập nhật lần cuối: 2024 • <strong>BookSelf Official</strong>
+                </p>
+              </div>
+            </div>
+          </header>
+          
           <div className={styles.infoContent}>
             {pageData.content}
           </div>
-        </div>
+        </article>
       </div>
     </div>
   );

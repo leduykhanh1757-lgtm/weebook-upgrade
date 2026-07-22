@@ -1,18 +1,17 @@
-// ========== AUTH ROUTES ========== //
+// ========== AUTH ROUTES (MYSQL) ========== //
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { getDb } = require('../database');
+const { pool } = require('../database');
 const { generateToken, requireAuth } = require('../middleware/auth');
 const { sendVerificationEmail } = require('../utils/email');
 
 const router = express.Router();
 
 // POST /api/auth/register
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;
 
-        // Validate
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin!' });
         }
@@ -21,25 +20,21 @@ router.post('/register', (req, res) => {
             return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự!' });
         }
 
-        const db = getDb();
-
-        // Check existing email
-        const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-        if (existingUser) {
+        const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
             return res.status(400).json({ error: 'Email đã được sử dụng!' });
         }
 
-        // Hash password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // Insert user
-        const result = db.prepare(
-            'INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)'
-        ).run(name, email, phone || null, hashedPassword);
+        const [insertResult] = await pool.query(
+            'INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)',
+            [name, email, phone || null, hashedPassword]
+        );
 
-        const user = db.prepare('SELECT id, name, email, phone, role FROM users WHERE id = ?').get(result.lastInsertRowid);
+        const [userRows] = await pool.query('SELECT id, name, email, phone, role FROM users WHERE id = ?', [insertResult.insertId]);
+        const user = userRows[0];
 
-        // Generate token
         const token = generateToken(user);
 
         res.status(201).json({
@@ -54,7 +49,7 @@ router.post('/register', (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -62,8 +57,8 @@ router.post('/login', (req, res) => {
             return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin!' });
         }
 
-        const db = getDb();
-        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+        const user = rows[0];
 
         if (!user) {
             return res.status(401).json({ error: 'Sai email hoặc mật khẩu!' });
@@ -73,13 +68,11 @@ router.post('/login', (req, res) => {
             return res.status(403).json({ error: 'Tài khoản của bạn đã bị khóa do vi phạm chính sách.' });
         }
 
-        // Compare password
         const isMatch = bcrypt.compareSync(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: 'Sai email hoặc mật khẩu!' });
         }
 
-        // Generate token
         const token = generateToken(user);
 
         res.json({
@@ -112,27 +105,30 @@ router.get('/me', requireAuth, (req, res) => {
 });
 
 // PUT /api/auth/profile
-router.put('/profile', requireAuth, (req, res) => {
+router.put('/profile', requireAuth, async (req, res) => {
     try {
         const { name, phone, birthday, address, gender, avatar, newsletter_subscribed } = req.body;
-        const db = getDb();
 
-        db.prepare(
-            `UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, gender = ?, avatar = ?, newsletter_subscribed = ?, updated_at = datetime('now') WHERE id = ?`
-        ).run(
-            name || req.user.name, 
-            phone || null, 
-            birthday || null, 
-            address || null, 
-            gender || req.user.gender || 'Khác',
-            avatar !== undefined ? avatar : req.user.avatar,
-            newsletter_subscribed !== undefined ? newsletter_subscribed : req.user.newsletter_subscribed,
-            req.user.id
+        await pool.query(
+            `UPDATE users SET name = ?, phone = ?, birthday = ?, address = ?, gender = ?, avatar = ?, newsletter_subscribed = ?, updated_at = NOW() WHERE id = ?`,
+            [
+                name || req.user.name, 
+                phone || null, 
+                birthday || null, 
+                address || null, 
+                gender || req.user.gender || 'Khác',
+                avatar !== undefined ? avatar : req.user.avatar,
+                newsletter_subscribed !== undefined ? newsletter_subscribed : req.user.newsletter_subscribed,
+                req.user.id
+            ]
         );
 
-        const updatedUser = db.prepare('SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?').get(req.user.id);
+        const [updatedRows] = await pool.query(
+            'SELECT id, name, email, phone, role, birthday, address, gender, avatar, email_verified, phone_verified, newsletter_subscribed FROM users WHERE id = ?',
+            [req.user.id]
+        );
 
-        res.json({ message: 'Cập nhật thông tin thành công!', user: updatedUser });
+        res.json({ message: 'Cập nhật thông tin thành công!', user: updatedRows[0] });
     } catch (err) {
         console.error('Profile update error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
@@ -140,7 +136,7 @@ router.put('/profile', requireAuth, (req, res) => {
 });
 
 // PUT /api/auth/password
-router.put('/password', requireAuth, (req, res) => {
+router.put('/password', requireAuth, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
 
@@ -152,15 +148,15 @@ router.put('/password', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 6 ký tự!' });
         }
 
-        const db = getDb();
-        const user = db.prepare('SELECT password FROM users WHERE id = ?').get(req.user.id);
+        const [rows] = await pool.query('SELECT password FROM users WHERE id = ?', [req.user.id]);
+        const user = rows[0];
 
         if (!bcrypt.compareSync(currentPassword, user.password)) {
             return res.status(400).json({ error: 'Mật khẩu hiện tại không đúng!' });
         }
 
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
-        db.prepare("UPDATE users SET password = ?, updated_at = datetime('now') WHERE id = ?").run(hashedPassword, req.user.id);
+        await pool.query('UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?', [hashedPassword, req.user.id]);
 
         res.json({ message: 'Đổi mật khẩu thành công!' });
     } catch (err) {
@@ -177,24 +173,21 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(400).json({ error: 'Vui lòng nhập email!' });
         }
         
-        const db = getDb();
-        const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+        const [rows] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+        const user = rows[0];
         
         if (!user) {
-            // To prevent email enumeration, we still return success or a generic message.
             return res.status(200).json({ message: 'Đã gửi hướng dẫn khôi phục qua email' });
         }
         
-        // Generate a 6-digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // Save to db, expires in 15 minutes
-        db.prepare("UPDATE users SET reset_code = ?, reset_code_expires = datetime('now', '+15 minutes') WHERE email = ?")
-          .run(code, email);
+        await pool.query(
+            "UPDATE users SET reset_code = ?, reset_code_expires = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE email = ?",
+            [code, email]
+        );
         
-        // Send email
         const emailSent = await sendVerificationEmail(email, code);
-        
         if (!emailSent) {
             return res.status(500).json({ error: 'Không thể gửi email, vui lòng thử lại sau.' });
         }
@@ -207,7 +200,7 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // POST /api/auth/reset-password
-router.post('/reset-password', (req, res) => {
+router.post('/reset-password', async (req, res) => {
     try {
         const { email, code, newPassword } = req.body;
         
@@ -219,21 +212,21 @@ router.post('/reset-password', (req, res) => {
             return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự!' });
         }
         
-        const db = getDb();
-        
-        // Check if user exists and code matches and is not expired
-        const user = db.prepare("SELECT id FROM users WHERE email = ? AND reset_code = ? AND datetime(reset_code_expires) >= datetime('now')").get(email, code);
+        const [rows] = await pool.query(
+            "SELECT id FROM users WHERE email = ? AND reset_code = ? AND reset_code_expires >= NOW()",
+            [email, code]
+        );
+        const user = rows[0];
         
         if (!user) {
             return res.status(400).json({ error: 'Mã xác nhận không hợp lệ hoặc đã hết hạn!' });
         }
         
-        // Hash new password
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
-        
-        // Update password and clear reset code
-        db.prepare('UPDATE users SET password = ?, reset_code = NULL, reset_code_expires = NULL WHERE id = ?')
-          .run(hashedPassword, user.id);
+        await pool.query(
+            'UPDATE users SET password = ?, reset_code = NULL, reset_code_expires = NULL WHERE id = ?',
+            [hashedPassword, user.id]
+        );
           
         res.status(200).json({ message: 'Đổi mật khẩu thành công! Bạn có thể đăng nhập.' });
     } catch (err) {
@@ -243,10 +236,12 @@ router.post('/reset-password', (req, res) => {
 });
 
 // GET /api/auth/addresses
-router.get('/addresses', requireAuth, (req, res) => {
+router.get('/addresses', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
-        const addresses = db.prepare('SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC').all(req.user.id);
+        const [addresses] = await pool.query(
+            'SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
+            [req.user.id]
+        );
         res.json({ addresses });
     } catch (err) {
         console.error('Get addresses error:', err);
@@ -255,28 +250,27 @@ router.get('/addresses', requireAuth, (req, res) => {
 });
 
 // POST /api/auth/addresses
-router.post('/addresses', requireAuth, (req, res) => {
+router.post('/addresses', requireAuth, async (req, res) => {
     try {
         const { receiver_name, phone, full_address, is_default } = req.body;
         if (!receiver_name || !phone || !full_address) {
             return res.status(400).json({ error: 'Vui lòng nhập đầy đủ thông tin!' });
         }
         
-        const db = getDb();
-        
-        // If this is the first address or is_default is true, set others to not default
-        const existing = db.prepare('SELECT COUNT(*) as count FROM addresses WHERE user_id = ?').get(req.user.id);
-        const shouldBeDefault = (is_default === 1 || existing.count === 0) ? 1 : 0;
+        const [countRows] = await pool.query('SELECT COUNT(*) as count FROM addresses WHERE user_id = ?', [req.user.id]);
+        const shouldBeDefault = (is_default === 1 || countRows[0].count === 0) ? 1 : 0;
         
         if (shouldBeDefault === 1) {
-            db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(req.user.id);
+            await pool.query('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [req.user.id]);
         }
 
-        const stmt = db.prepare('INSERT INTO addresses (user_id, receiver_name, phone, full_address, is_default) VALUES (?, ?, ?, ?, ?)');
-        const result = stmt.run(req.user.id, receiver_name, phone, full_address, shouldBeDefault);
+        const [insertResult] = await pool.query(
+            'INSERT INTO addresses (user_id, receiver_name, phone, full_address, is_default) VALUES (?, ?, ?, ?, ?)',
+            [req.user.id, receiver_name, phone, full_address, shouldBeDefault]
+        );
         
-        const newAddress = db.prepare('SELECT * FROM addresses WHERE id = ?').get(result.lastInsertRowid);
-        res.status(201).json({ message: 'Thêm địa chỉ thành công', address: newAddress });
+        const [newAddrRows] = await pool.query('SELECT * FROM addresses WHERE id = ?', [insertResult.insertId]);
+        res.status(201).json({ message: 'Thêm địa chỉ thành công', address: newAddrRows[0] });
     } catch (err) {
         console.error('Add address error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
@@ -284,23 +278,23 @@ router.post('/addresses', requireAuth, (req, res) => {
 });
 
 // PUT /api/auth/addresses/:id
-router.put('/addresses/:id', requireAuth, (req, res) => {
+router.put('/addresses/:id', requireAuth, async (req, res) => {
     try {
         const { receiver_name, phone, full_address, is_default } = req.body;
         const addressId = req.params.id;
         
-        const db = getDb();
-        
-        // Ensure address belongs to user
-        const address = db.prepare('SELECT * FROM addresses WHERE id = ? AND user_id = ?').get(addressId, req.user.id);
+        const [rows] = await pool.query('SELECT * FROM addresses WHERE id = ? AND user_id = ?', [addressId, req.user.id]);
+        const address = rows[0];
         if (!address) return res.status(404).json({ error: 'Không tìm thấy địa chỉ' });
 
         if (is_default === 1) {
-            db.prepare('UPDATE addresses SET is_default = 0 WHERE user_id = ?').run(req.user.id);
+            await pool.query('UPDATE addresses SET is_default = 0 WHERE user_id = ?', [req.user.id]);
         }
 
-        const stmt = db.prepare('UPDATE addresses SET receiver_name = ?, phone = ?, full_address = ?, is_default = ? WHERE id = ?');
-        stmt.run(receiver_name || address.receiver_name, phone || address.phone, full_address || address.full_address, is_default !== undefined ? is_default : address.is_default, addressId);
+        await pool.query(
+            'UPDATE addresses SET receiver_name = ?, phone = ?, full_address = ?, is_default = ? WHERE id = ?',
+            [receiver_name || address.receiver_name, phone || address.phone, full_address || address.full_address, is_default !== undefined ? is_default : address.is_default, addressId]
+        );
         
         res.json({ message: 'Cập nhật địa chỉ thành công' });
     } catch (err) {
@@ -310,21 +304,20 @@ router.put('/addresses/:id', requireAuth, (req, res) => {
 });
 
 // DELETE /api/auth/addresses/:id
-router.delete('/addresses/:id', requireAuth, (req, res) => {
+router.delete('/addresses/:id', requireAuth, async (req, res) => {
     try {
         const addressId = req.params.id;
-        const db = getDb();
         
-        const address = db.prepare('SELECT * FROM addresses WHERE id = ? AND user_id = ?').get(addressId, req.user.id);
+        const [rows] = await pool.query('SELECT * FROM addresses WHERE id = ? AND user_id = ?', [addressId, req.user.id]);
+        const address = rows[0];
         if (!address) return res.status(404).json({ error: 'Không tìm thấy địa chỉ' });
 
-        db.prepare('DELETE FROM addresses WHERE id = ?').run(addressId);
+        await pool.query('DELETE FROM addresses WHERE id = ?', [addressId]);
         
-        // If deleted was default, make the most recent one default
         if (address.is_default === 1) {
-            const nextAddress = db.prepare('SELECT id FROM addresses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(req.user.id);
-            if (nextAddress) {
-                db.prepare('UPDATE addresses SET is_default = 1 WHERE id = ?').run(nextAddress.id);
+            const [nextRows] = await pool.query('SELECT id FROM addresses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+            if (nextRows.length > 0) {
+                await pool.query('UPDATE addresses SET is_default = 1 WHERE id = ?', [nextRows[0].id]);
             }
         }
         

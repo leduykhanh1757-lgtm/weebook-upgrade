@@ -8,6 +8,7 @@ import CartDropdown from './CartDropdown';
 import ConfirmModal from './ConfirmModal';
 import { toast } from 'react-hot-toast';
 import styles from './Header.module.css';
+import logoImg from '../assets/images/logo.png';
 
 const Header = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
@@ -97,7 +98,7 @@ const Header = () => {
           <div className={styles.leftSection}>
             <div className={styles.brandSection}>
               <Link to="/" className={styles.logo}>
-                <img src="/src/assets/images/logo.png" alt="BookSelf Logo" />
+                <img src={logoImg} alt="BookSelf Logo" className={styles.logoImg} />
                 <span className={styles.brandName}>BookSelf</span>
               </Link>
             </div>
@@ -118,7 +119,9 @@ const Header = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => { if(searchQuery.trim().length > 1) setShowSearchDropdown(true); }}
               />
-              <button type="submit" className={styles.searchBtn}><i className="fa-solid fa-magnifying-glass"></i></button>
+              <button type="submit" className={styles.searchBtn} aria-label="Tìm kiếm">
+                <i className="fa-solid fa-magnifying-glass"></i>
+              </button>
             </form>
             
             {showSearchDropdown && (
@@ -137,7 +140,7 @@ const Header = () => {
                           setSearchQuery('');
                         }}
                       >
-                        <img src={book.images?.[0] || '/src/assets/images/placeholder.jpg'} alt={book.title} className={styles.searchResultImage} />
+                        <img src={book.images?.[0] || '/src/assets/images/logo.png'} alt={book.title} className={styles.searchResultImage} />
                         <div className={styles.searchResultInfo}>
                           <h4>{book.title}</h4>
                           <span className={styles.searchResultPrice}>
@@ -177,12 +180,12 @@ const Header = () => {
                   onClick={() => setIsAccountOpen(!isAccountOpen)}
                 >
                   {user && user.avatar ? (
-                    <img src={user.avatar} alt="Avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                    <img src={user.avatar} alt="Avatar" className={styles.userAvatar} />
                   ) : (
                     <i className="fa-regular fa-user"></i> 
                   )}
-                  <span>{user ? user.name.split(' ')[0] : 'Tài khoản'}</span> 
-                  <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.8em' }}></i>
+                  <span className={styles.actionText}>{user ? user.name.split(' ')[0] : 'Tài khoản'}</span> 
+                  <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.75rem' }}></i>
                 </button>
                 <div className={`${styles.accountDropdown} ${isAccountOpen ? styles.show : ''}`}>
                   {isAuthenticated ? (
@@ -195,11 +198,11 @@ const Header = () => {
                       <Link to="/profile" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-user"></i> Hồ sơ cá nhân</Link>
                       <Link to="/wishlist" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-heart"></i> Đã yêu thích</Link>
                       <Link to="/profile/orders" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-rectangle-list"></i> Quản lý đơn hàng</Link>
-                      <button onClick={handleLogout}><i className="fa-solid fa-sign-out-alt"></i> Đăng xuất</button>
+                      <button onClick={handleLogout}><i className="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
                     </>
                   ) : (
                     <>
-                      <Link to="/auth" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-sign-in-alt"></i> Đăng nhập / Đăng ký</Link>
+                      <Link to="/auth" onClick={() => setIsAccountOpen(false)}><i className="fa-solid fa-right-to-bracket"></i> Đăng nhập / Đăng ký</Link>
                     </>
                   )}
                 </div>
@@ -211,7 +214,7 @@ const Header = () => {
                   className={styles.actionIcon} 
                   onClick={() => setIsCartOpen(!isCartOpen)}
                 >
-                  <i className="fa-solid fa-cart-shopping"></i> <span>Giỏ hàng</span>
+                  <i className="fa-solid fa-cart-shopping"></i> <span className={styles.actionText}>Giỏ hàng</span>
                   {cartItemCount > 0 && <span className={styles.cartCount}>{cartItemCount}</span>}
                 </button>
                 {isCartOpen && <CartDropdown closeCart={() => setIsCartOpen(false)} />}

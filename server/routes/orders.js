@@ -1,13 +1,13 @@
-// ========== ORDERS ROUTES ========== //
+// ========== ORDERS ROUTES (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../database');
+const { pool } = require('../database');
 const { requireAuth } = require('../middleware/auth');
 const { ORDER_STATUS } = require('../constants/statusEnum');
 
 const router = express.Router();
 
 // POST /api/orders - Create order
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { fullName, phone, email, city, district, ward, address, payment, notes, shippingCost, buyNowItem, couponCode } = req.body;
 
@@ -15,22 +15,22 @@ router.post('/', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Vui lòng điền đầy đủ thông tin!' });
         }
 
-        const db = getDb();
-
         // Get cart items or buyNow item
         let cartItems = [];
         if (buyNowItem) {
-            const book = db.prepare('SELECT id as book_id, title, author, price, images, stock FROM books WHERE id = ?').get(buyNowItem.bookId);
+            const [bookRows] = await pool.query('SELECT id as book_id, title, author, price, images, stock FROM books WHERE id = ?', [buyNowItem.bookId]);
+            const book = bookRows[0];
             if (!book) {
                 return res.status(400).json({ error: 'Sản phẩm không tồn tại!' });
             }
             cartItems = [{ ...book, quantity: buyNowItem.quantity }];
         } else {
-            cartItems = db.prepare(`
+            const [rows] = await pool.query(`
                 SELECT c.book_id, c.quantity, b.title, b.author, b.price, b.images, b.stock
                 FROM cart c JOIN books b ON c.book_id = b.id
                 WHERE c.user_id = ?
-            `).all(req.user.id);
+            `, [req.user.id]);
+            cartItems = rows;
 
             if (cartItems.length === 0) {
                 return res.status(400).json({ error: 'Giỏ hàng trống!' });
@@ -42,6 +42,15 @@ router.post('/', requireAuth, (req, res) => {
         const orderItems = cartItems.map(item => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
+
+            let firstImage = '';
+            try {
+                const imgArr = typeof item.images === 'string' ? JSON.parse(item.images || '[]') : (item.images || []);
+                firstImage = imgArr[0] || '';
+            } catch (e) {
+                firstImage = '';
+            }
+
             return {
                 bookId: item.book_id,
                 title: item.title,
@@ -49,7 +58,7 @@ router.post('/', requireAuth, (req, res) => {
                 price: item.price,
                 quantity: item.quantity,
                 total: itemTotal,
-                image: JSON.parse(item.images || '[]')[0] || ''
+                image: firstImage
             };
         });
 
@@ -59,9 +68,11 @@ router.post('/', requireAuth, (req, res) => {
 
         // Re-validate coupon
         if (couponCode) {
-            const userEmail = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.id)?.email;
-            const coupon = db.prepare('SELECT * FROM coupons WHERE code = ? COLLATE NOCASE').get(couponCode);
-            
+            const [userRows] = await pool.query('SELECT email FROM users WHERE id = ?', [req.user.id]);
+            const userEmail = userRows[0]?.email;
+            const [couponRows] = await pool.query('SELECT * FROM coupons WHERE LOWER(code) = LOWER(?)', [couponCode]);
+            const coupon = couponRows[0];
+
             if (coupon && coupon.status === 'active') {
                 const now = new Date();
                 const isValidDate = (!coupon.start_date || new Date(coupon.start_date) <= now) && (!coupon.end_date || new Date(coupon.end_date) >= now);
@@ -84,52 +95,54 @@ router.post('/', requireAuth, (req, res) => {
         const total = subtotal + calculatedShipping - discount;
 
         // Generate Order Code
-        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
         const orderCode = `WB${dateStr}${randomStr}`;
 
-        // Create order in transaction
-        const createOrder = db.transaction(() => {
-            const orderResult = db.prepare(`
+        // Create order inside MySQL transaction
+        const conn = await pool.getConnection();
+        let orderId;
+        try {
+            await conn.beginTransaction();
+
+            const [orderResult] = await conn.query(`
                 INSERT INTO orders (order_code, user_id, full_name, phone, email, city, district, ward, address, payment_method, notes, subtotal, shipping_cost, discount_amount, total, coupon_code)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(orderCode, req.user.id, fullName, phone, email || null, city || null, district || null, ward || null, address, payment || 'cod', notes || null, subtotal, calculatedShipping, discount, total, validCoupon ? validCoupon.code : null);
+            `, [orderCode, req.user.id, fullName, phone, email || null, city || null, district || null, ward || null, address, payment || 'cod', notes || null, subtotal, calculatedShipping, discount, total, validCoupon ? validCoupon.code : null]);
 
-            const orderId = orderResult.lastInsertRowid;
-
-            // Insert order items
-            const insertItem = db.prepare(
-                'INSERT INTO order_items (order_id, book_id, title, author, price, quantity, total, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-            );
-
-            const updateStock = db.prepare(
-                'UPDATE books SET stock = stock - ? WHERE id = ? AND stock >= ?'
-            );
+            orderId = orderResult.insertId;
 
             for (const item of orderItems) {
-                insertItem.run(orderId, item.bookId, item.title, item.author, item.price, item.quantity, item.total, item.image);
-                updateStock.run(item.quantity, item.bookId, item.quantity);
+                await conn.query(
+                    'INSERT INTO order_items (order_id, book_id, title, author, price, quantity, total, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [orderId, item.bookId, item.title, item.author, item.price, item.quantity, item.total, item.image]
+                );
+                await conn.query(
+                    'UPDATE books SET stock = stock - ? WHERE id = ? AND stock >= ?',
+                    [item.quantity, item.bookId, item.quantity]
+                );
             }
 
-            // Increment coupon used_count
             if (validCoupon) {
-                db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(validCoupon.id);
+                await conn.query('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?', [validCoupon.id]);
             }
 
-            // Clear cart only if not a direct buy
             if (!buyNowItem) {
-                db.prepare('DELETE FROM cart WHERE user_id = ?').run(req.user.id);
+                await conn.query('DELETE FROM cart WHERE user_id = ?', [req.user.id]);
             }
 
-            return { orderId, orderCode };
-        });
-
-        const { orderId, orderCode: finalOrderCode } = createOrder();
+            await conn.commit();
+        } catch (txErr) {
+            await conn.rollback();
+            throw txErr;
+        } finally {
+            conn.release();
+        }
 
         res.status(201).json({
             message: 'Đặt hàng thành công!',
             orderId,
-            orderCode: finalOrderCode,
+            orderCode,
             total
         });
     } catch (err) {
@@ -139,19 +152,18 @@ router.post('/', requireAuth, (req, res) => {
 });
 
 // GET /api/orders - Get user's orders
-router.get('/', requireAuth, (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
-        const orders = db.prepare(`
+        const [orders] = await pool.query(`
             SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC
-        `).all(req.user.id);
+        `, [req.user.id]);
 
-        // Get items for each order
-        const getItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?');
-
-        const ordersWithItems = orders.map(order => ({
-            ...order,
-            items: getItems.all(order.id)
+        const ordersWithItems = await Promise.all(orders.map(async (order) => {
+            const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+            return {
+                ...order,
+                items
+            };
         }));
 
         res.json({ orders: ordersWithItems });
@@ -162,16 +174,16 @@ router.get('/', requireAuth, (req, res) => {
 });
 
 // GET /api/orders/:id - Get order details
-router.get('/:id', requireAuth, (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
-        const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(parseInt(req.params.id), req.user.id);
+        const [rows] = await pool.query('SELECT * FROM orders WHERE id = ? AND user_id = ?', [parseInt(req.params.id), req.user.id]);
+        const order = rows[0];
 
         if (!order) {
             return res.status(404).json({ error: 'Không tìm thấy đơn hàng!' });
         }
 
-        const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(order.id);
+        const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
 
         res.json({ order: { ...order, items } });
     } catch (err) {
@@ -181,12 +193,12 @@ router.get('/:id', requireAuth, (req, res) => {
 });
 
 // PUT /api/orders/:id/cancel - Cancel order
-router.put('/:id/cancel', requireAuth, (req, res) => {
+router.put('/:id/cancel', requireAuth, async (req, res) => {
     try {
-        const db = getDb();
         const orderId = parseInt(req.params.id);
         
-        const order = db.prepare('SELECT status FROM orders WHERE id = ? AND user_id = ?').get(orderId, req.user.id);
+        const [rows] = await pool.query('SELECT status FROM orders WHERE id = ? AND user_id = ?', [orderId, req.user.id]);
+        const order = rows[0];
         
         if (!order) {
             return res.status(404).json({ error: 'Không tìm thấy đơn hàng!' });
@@ -196,17 +208,24 @@ router.put('/:id/cancel', requireAuth, (req, res) => {
             return res.status(400).json({ error: 'Chỉ có thể hủy đơn hàng đang chờ xác nhận!' });
         }
 
-        db.transaction(() => {
-            // Update order status
-            db.prepare("UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?").run(ORDER_STATUS.CANCELLED, orderId);
+        const conn = await pool.getConnection();
+        try {
+            await conn.beginTransaction();
+
+            await conn.query("UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?", [ORDER_STATUS.CANCELLED, orderId]);
             
-            // Return stock
-            const items = db.prepare('SELECT book_id, quantity FROM order_items WHERE order_id = ?').all(orderId);
-            const updateStock = db.prepare('UPDATE books SET stock = stock + ? WHERE id = ?');
+            const [items] = await conn.query('SELECT book_id, quantity FROM order_items WHERE order_id = ?', [orderId]);
             for (const item of items) {
-                updateStock.run(item.quantity, item.book_id);
+                await conn.query('UPDATE books SET stock = stock + ? WHERE id = ?', [item.quantity, item.book_id]);
             }
-        })();
+
+            await conn.commit();
+        } catch (txErr) {
+            await conn.rollback();
+            throw txErr;
+        } finally {
+            conn.release();
+        }
 
         res.json({ message: 'Hủy đơn hàng thành công!' });
     } catch (err) {

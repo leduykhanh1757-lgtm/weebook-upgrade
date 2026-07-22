@@ -1,14 +1,13 @@
+// ========== MARKETING ROUTES (MYSQL) ========== //
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../database');
+const { pool } = require('../database');
 const { sendNewsletterWelcomeEmail } = require('../utils/email');
 
 // GET /api/marketing/banners
-// Returns active banners for the storefront
-router.get('/banners', (req, res) => {
+router.get('/banners', async (req, res) => {
     try {
-        const db = getDb();
-        const banners = db.prepare('SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order ASC, created_at DESC').all();
+        const [banners] = await pool.query('SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order ASC, created_at DESC');
         res.json({ banners });
     } catch (err) {
         console.error('Marketing Banners Error:', err);
@@ -17,15 +16,11 @@ router.get('/banners', (req, res) => {
 });
 
 // GET /api/marketing/coupons
-// Returns active coupons for the storefront
-router.get('/coupons', (req, res) => {
+router.get('/coupons', async (req, res) => {
     try {
         const { email } = req.query;
-        const db = getDb();
         const today = new Date().toISOString().slice(0, 10);
         
-        // If email is provided, fetch global coupons + personal coupons
-        // If no email, fetch only global coupons
         const query = `
             SELECT code, discount_type, discount_value, min_order_value, end_date
             FROM coupons 
@@ -38,7 +33,7 @@ router.get('/coupons', (req, res) => {
         `;
         
         const params = email ? [today, today, email] : [today, today];
-        const coupons = db.prepare(query).all(...params);
+        const [coupons] = await pool.query(query, params);
         
         res.json({ coupons });
     } catch (err) {
@@ -48,15 +43,14 @@ router.get('/coupons', (req, res) => {
 });
 
 // POST /api/marketing/coupon/validate
-// Validates a coupon code and calculates discount
-router.post('/coupon/validate', (req, res) => {
+router.post('/coupon/validate', async (req, res) => {
     try {
         const { code, subtotal, email } = req.body;
         if (!code) return res.status(400).json({ error: 'Vui lòng nhập mã giảm giá' });
         if (subtotal === undefined) return res.status(400).json({ error: 'Thiếu tổng tiền đơn hàng' });
 
-        const db = getDb();
-        const coupon = db.prepare('SELECT * FROM coupons WHERE code = ? COLLATE NOCASE').get(code);
+        const [rows] = await pool.query('SELECT * FROM coupons WHERE LOWER(code) = LOWER(?)', [code]);
+        const coupon = rows[0];
 
         if (!coupon) {
             return res.status(404).json({ error: 'Mã giảm giá không hợp lệ' });
@@ -84,16 +78,13 @@ router.post('/coupon/validate', (req, res) => {
             return res.status(400).json({ error: `Đơn hàng tối thiểu để áp dụng mã là ${new Intl.NumberFormat('vi-VN').format(coupon.min_order_value)}đ` });
         }
 
-        // Calculate discount
         let discount = 0;
         if (coupon.discount_type === 'percent') {
             discount = subtotal * (coupon.discount_value / 100);
-            // Cap discount if needed? We didn't define max_discount_amount, so we just apply percent
         } else {
             discount = coupon.discount_value;
         }
 
-        // Don't discount more than the subtotal
         if (discount > subtotal) {
             discount = subtotal;
         }
@@ -113,38 +104,28 @@ router.post('/coupon/validate', (req, res) => {
 });
 
 // POST /api/marketing/subscribe
-// Subscribe to newsletter and send a welcome email with a unique discount code
 router.post('/subscribe', async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: 'Vui lòng cung cấp email' });
 
-        const db = getDb();
-        
-        // Check if already subscribed
-        const existing = db.prepare('SELECT id FROM subscribers WHERE email = ? COLLATE NOCASE').get(email);
-        if (existing) {
+        const [existing] = await pool.query('SELECT id FROM subscribers WHERE LOWER(email) = LOWER(?)', [email]);
+        if (existing.length > 0) {
             return res.status(400).json({ error: 'Email này đã được đăng ký nhận khuyến mãi từ trước!' });
         }
 
-        // Insert into subscribers
-        db.prepare('INSERT INTO subscribers (email) VALUES (?)').run(email);
+        await pool.query('INSERT INTO subscribers (email) VALUES (?)', [email]);
 
-        // Generate unique coupon code
         const randomString = Math.random().toString(36).substring(2, 8).toUpperCase();
         const couponCode = 'WLCM-' + randomString;
 
-        // Insert unique coupon (10% discount, max 1 use, bound to email)
-        db.prepare(`
+        await pool.query(`
             INSERT INTO coupons (code, discount_type, discount_value, min_order_value, max_uses, user_email)
             VALUES (?, 'percent', 10, 0, 1, ?)
-        `).run(couponCode, email);
+        `, [couponCode, email]);
 
-        // Send email
         const emailSent = await sendNewsletterWelcomeEmail(email, couponCode);
-        
         if (!emailSent) {
-            // Still returning success for subscription, but warn about email failure in logs
             console.error('Failed to send newsletter email to:', email);
         }
 

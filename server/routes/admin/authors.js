@@ -1,36 +1,33 @@
-// ========== ADMIN — AUTHORS & PUBLISHERS ========== //
+// ========== ADMIN — AUTHORS & PUBLISHERS (MYSQL) ========== //
 const express = require('express');
-const { getDb } = require('../../database');
+const { pool } = require('../../database');
 
 const router = express.Router();
 
-// --- Authors ---
-router.get('/', (req, res) => {
+// --- Authors / Publishers ---
+router.get('/', async (req, res) => {
     try {
-        const db = getDb();
-        // Check if the request path came through /publishers mount
         if (req.baseUrl.endsWith('/publishers')) {
-            const publishers = db.prepare('SELECT * FROM publishers ORDER BY name ASC').all();
+            const [publishers] = await pool.query('SELECT * FROM publishers ORDER BY name ASC');
             return res.json({ publishers });
         }
-        const authors = db.prepare('SELECT * FROM authors ORDER BY name ASC').all();
+        const [authors] = await pool.query('SELECT * FROM authors ORDER BY name ASC');
         res.json({ authors });
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server' });
     }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
-        const db = getDb();
         if (req.baseUrl.endsWith('/publishers')) {
             const { name, description } = req.body;
-            const result = db.prepare('INSERT INTO publishers (name, description) VALUES (?, ?)').run(name, description || '');
-            return res.status(201).json({ message: 'Thêm NXB thành công', id: result.lastInsertRowid });
+            const [result] = await pool.query('INSERT INTO publishers (name, description) VALUES (?, ?)', [name, description || '']);
+            return res.status(201).json({ message: 'Thêm NXB thành công', id: result.insertId });
         }
         const { name, bio, image } = req.body;
-        const result = db.prepare('INSERT INTO authors (name, bio, image) VALUES (?, ?, ?)').run(name, bio || '', image || '');
-        res.status(201).json({ message: 'Thêm tác giả thành công', id: result.lastInsertRowid });
+        const [result] = await pool.query('INSERT INTO authors (name, bio, image) VALUES (?, ?, ?)', [name, bio || '', image || '']);
+        res.status(201).json({ message: 'Thêm tác giả thành công', id: result.insertId });
     } catch (err) {
         res.status(500).json({ error: 'Lỗi server' });
     }
