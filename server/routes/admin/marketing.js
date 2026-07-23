@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
             const [banners] = await pool.query('SELECT * FROM banners ORDER BY sort_order ASC, created_at DESC');
             return res.json({ banners });
         }
-        
+
         const [coupons] = await pool.query('SELECT * FROM coupons ORDER BY created_at DESC');
         res.json({ coupons });
     } catch (err) {

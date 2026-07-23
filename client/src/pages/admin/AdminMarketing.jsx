@@ -6,7 +6,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 
 const AdminMarketing = () => {
   const [activeTab, setActiveTab] = useState('coupons');
-  
+
   // States cho Coupons
   const [coupons, setCoupons] = useState([]);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
@@ -161,7 +161,7 @@ const AdminMarketing = () => {
   return (
     <div>
       <h1 className={styles.pageTitle}>Marketing & Khuyến mãi</h1>
-      
+
       <div className={styles.tabsContainer}>
         <button className={activeTab === 'coupons' ? styles.tabBtnActive : styles.tabBtn} onClick={() => setActiveTab('coupons')}>
           Mã giảm giá (Coupons)
@@ -183,7 +183,7 @@ const AdminMarketing = () => {
                 <i className="fa-solid fa-plus"></i> Tạo mã giảm giá mới
               </button>
             </div>
-            
+
             {loadingCoupons ? <div className={styles.loading}>Đang tải...</div> : (
               <table className={styles.table}>
                 <thead>
@@ -203,7 +203,7 @@ const AdminMarketing = () => {
                     <tr key={c.id}>
                       <td><strong>{c.code}</strong></td>
                       <td>
-                        {c.discount_type === 'percent' 
+                        {c.discount_type === 'percent'
                           ? <span className={styles.badgeSuccess}>- {c.discount_value}%</span>
                           : <span className={styles.badgeNeutral}>- {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(c.discount_value)}</span>
                         }
@@ -215,7 +215,7 @@ const AdminMarketing = () => {
                       </td>
                       <td>
                         {c.user_email ? (
-                          <span className={styles.badgeNeutral} title="Mã sinh tự động cho cá nhân" style={{background: '#fef3c7', color: '#d97706'}}>
+                          <span className={styles.badgeNeutral} title="Mã sinh tự động cho cá nhân" style={{ background: '#fef3c7', color: '#d97706' }}>
                             {c.user_email}
                           </span>
                         ) : (
@@ -255,7 +255,7 @@ const AdminMarketing = () => {
                 <i className="fa-solid fa-plus"></i> Thêm Banner mới
               </button>
             </div>
-            
+
             {loadingBanners ? <div className={styles.loading}>Đang tải...</div> : (
               <table className={styles.table}>
                 <thead>
@@ -279,7 +279,7 @@ const AdminMarketing = () => {
                         <div className={styles.textSmall}>{b.description}</div>
                       </td>
                       <td>
-                        {b.link_url ? <a href={b.link_url} target="_blank" rel="noreferrer" style={{color: '#0ea5e9'}}>Xem link</a> : 'Không'}
+                        {b.link_url ? <a href={b.link_url} target="_blank" rel="noreferrer" style={{ color: '#0ea5e9' }}>Xem link</a> : 'Không'}
                       </td>
                       <td>{b.sort_order}</td>
                       <td>
@@ -315,44 +315,44 @@ const AdminMarketing = () => {
                 <div className={styles.grid2}>
                   <div className={styles.formGroup}>
                     <label>Mã (Code) *</label>
-                    <input type="text" value={couponForm.code} onChange={e => setCouponForm({...couponForm, code: e.target.value.toUpperCase()})} placeholder="VD: SUMMER50" required />
+                    <input type="text" value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} placeholder="VD: SUMMER50" required />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Email chủ sở hữu (Để trống nếu Mã đại trà)</label>
-                    <input type="email" value={couponForm.user_email} onChange={e => setCouponForm({...couponForm, user_email: e.target.value})} placeholder="VD: khachhang@gmail.com" />
+                    <input type="email" value={couponForm.user_email} onChange={e => setCouponForm({ ...couponForm, user_email: e.target.value })} placeholder="VD: khachhang@gmail.com" />
                   </div>
                 </div>
                 <div className={styles.grid2}>
                   <div className={styles.formGroup}>
                     <label>Loại giảm giá</label>
-                    <select value={couponForm.discount_type} onChange={e => setCouponForm({...couponForm, discount_type: e.target.value})}>
+                    <select value={couponForm.discount_type} onChange={e => setCouponForm({ ...couponForm, discount_type: e.target.value })}>
                       <option value="fixed">Giảm số tiền cố định (VNĐ)</option>
                       <option value="percent">Giảm theo %</option>
                     </select>
                   </div>
                   <div className={styles.formGroup}>
                     <label>Giá trị giảm *</label>
-                    <input type="number" min="1" value={couponForm.discount_value} onChange={e => setCouponForm({...couponForm, discount_value: e.target.value})} placeholder="VD: 50000 hoặc 10" required />
+                    <input type="number" min="1" value={couponForm.discount_value} onChange={e => setCouponForm({ ...couponForm, discount_value: e.target.value })} placeholder="VD: 50000 hoặc 10" required />
                   </div>
                 </div>
                 <div className={styles.grid2}>
                   <div className={styles.formGroup}>
                     <label>Đơn tối thiểu (VNĐ)</label>
-                    <input type="number" min="0" value={couponForm.min_order_value} onChange={e => setCouponForm({...couponForm, min_order_value: e.target.value})} />
+                    <input type="number" min="0" value={couponForm.min_order_value} onChange={e => setCouponForm({ ...couponForm, min_order_value: e.target.value })} />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Lượt dùng tối đa</label>
-                    <input type="number" min="1" value={couponForm.max_uses} onChange={e => setCouponForm({...couponForm, max_uses: e.target.value})} placeholder="Để trống nếu không giới hạn" />
+                    <input type="number" min="1" value={couponForm.max_uses} onChange={e => setCouponForm({ ...couponForm, max_uses: e.target.value })} placeholder="Để trống nếu không giới hạn" />
                   </div>
                 </div>
                 <div className={styles.grid2}>
                   <div className={styles.formGroup}>
                     <label>Ngày bắt đầu</label>
-                    <input type="date" value={couponForm.start_date} onChange={e => setCouponForm({...couponForm, start_date: e.target.value})} />
+                    <input type="date" value={couponForm.start_date} onChange={e => setCouponForm({ ...couponForm, start_date: e.target.value })} />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Ngày kết thúc</label>
-                    <input type="date" value={couponForm.end_date} onChange={e => setCouponForm({...couponForm, end_date: e.target.value})} />
+                    <input type="date" value={couponForm.end_date} onChange={e => setCouponForm({ ...couponForm, end_date: e.target.value })} />
                   </div>
                 </div>
               </div>
@@ -377,20 +377,20 @@ const AdminMarketing = () => {
               <div className={styles.modalBody}>
                 <div className={styles.formGroup}>
                   <label>URL Hình ảnh *</label>
-                  <input type="text" value={bannerForm.image_url} onChange={e => setBannerForm({...bannerForm, image_url: e.target.value})} placeholder="VD: https://link-to-image.jpg" required />
-                  {bannerForm.image_url && <img src={bannerForm.image_url} alt="preview" style={{width: '100%', height: '120px', objectFit: 'cover', marginTop: '10px', borderRadius: '4px'}} onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />}
+                  <input type="text" value={bannerForm.image_url} onChange={e => setBannerForm({ ...bannerForm, image_url: e.target.value })} placeholder="VD: https://link-to-image.jpg" required />
+                  {bannerForm.image_url && <img src={bannerForm.image_url} alt="preview" style={{ width: '100%', height: '120px', objectFit: 'cover', marginTop: '10px', borderRadius: '4px' }} onError={(e) => e.target.style.display = 'none'} onLoad={(e) => e.target.style.display = 'block'} />}
                 </div>
                 <div className={styles.formGroup}>
                   <label>Tiêu đề (Tùy chọn)</label>
-                  <input type="text" value={bannerForm.title} onChange={e => setBannerForm({...bannerForm, title: e.target.value})} />
+                  <input type="text" value={bannerForm.title} onChange={e => setBannerForm({ ...bannerForm, title: e.target.value })} />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Liên kết khi click (Tùy chọn)</label>
-                  <input type="text" value={bannerForm.link_url} onChange={e => setBannerForm({...bannerForm, link_url: e.target.value})} placeholder="/category?category=foreign" />
+                  <input type="text" value={bannerForm.link_url} onChange={e => setBannerForm({ ...bannerForm, link_url: e.target.value })} placeholder="/category?category=foreign" />
                 </div>
                 <div className={styles.formGroup}>
                   <label>Thứ tự hiển thị (0 là đầu tiên)</label>
-                  <input type="number" min="0" value={bannerForm.sort_order} onChange={e => setBannerForm({...bannerForm, sort_order: e.target.value})} />
+                  <input type="number" min="0" value={bannerForm.sort_order} onChange={e => setBannerForm({ ...bannerForm, sort_order: e.target.value })} />
                 </div>
               </div>
               <div className={styles.modalFooter}>
@@ -403,7 +403,7 @@ const AdminMarketing = () => {
       )}
 
       {/* Modal Xóa */}
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={deleteConfirm.show}
         title={`Xóa ${deleteConfirm.type === 'coupon' ? 'mã giảm giá' : 'banner'}`}
         message={`Bạn có chắc chắn muốn xóa ${deleteConfirm.name}? Hành động này không thể hoàn tác.`}

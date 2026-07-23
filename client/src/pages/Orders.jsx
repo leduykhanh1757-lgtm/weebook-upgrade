@@ -49,7 +49,8 @@ const Orders = () => {
   const formatPrice = (price) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
   const getStatusBadge = (status) => {
-    switch(status.toLowerCase()) {
+    const s = (status || '').toLowerCase();
+    switch(s) {
       case 'pending':
         return <span className={`${styles.statusBadge} ${styles.pending}`}>Chờ xác nhận</span>;
       case 'processing':

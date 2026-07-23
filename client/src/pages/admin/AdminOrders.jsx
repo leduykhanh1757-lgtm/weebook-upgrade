@@ -9,12 +9,7 @@ const statusMap = {
   'processing': 'Đang xử lý',
   'shipped': 'Đang giao',
   'completed': 'Hoàn thành',
-  'cancelled': 'Đã hủy',
-  'Chờ xác nhận': 'Chờ xác nhận',
-  'Đang xử lý': 'Đang xử lý',
-  'Đang giao': 'Đang giao',
-  'Hoàn thành': 'Hoàn thành',
-  'Đã hủy': 'Đã hủy'
+  'cancelled': 'Đã hủy'
 };
 
 const reverseStatusMap = {
