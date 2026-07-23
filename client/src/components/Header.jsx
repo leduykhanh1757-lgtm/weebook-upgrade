@@ -158,7 +158,7 @@ const Header = () => {
                     </Link>
                   </div>
                 ) : (
-                  <div className={styles.searchDropdownMessage}>Không tìm thấy kết quả nào cho "{searchQuery}"</div>
+                  <div className={styles.searchDropdownMessage}>Không tìm thấy kết quả nào cho &quot;{searchQuery}&quot;</div>
                 )}
               </div>
             )}

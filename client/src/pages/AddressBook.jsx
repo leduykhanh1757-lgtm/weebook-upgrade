@@ -246,6 +246,19 @@ const AddressBook = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Xóa địa chỉ"
+        message="Bạn có chắc chắn muốn xóa địa chỉ này khỏi sổ địa chỉ?"
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={executeDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setAddressToDelete(null);
+        }}
+      />
     </div>
   );
 };

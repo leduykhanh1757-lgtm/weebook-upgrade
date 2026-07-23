@@ -2,32 +2,24 @@
 require('dotenv').config();
 const mysql = require('mysql2/promise');
 
+const sslConfig = process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined;
+
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'weebook_db',
+    database: process.env.DB_NAME || 'defaultdb',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-    multipleStatements: true
+    multipleStatements: true,
+    ssl: sslConfig
 });
 
 async function initializeDatabase() {
     try {
-        // Test initial connection without database to create DB if missing
-        const tempConn = await mysql.createConnection({
-            host: process.env.DB_HOST || 'localhost',
-            port: process.env.DB_PORT || 3306,
-            user: process.env.DB_USER || 'root',
-            password: process.env.DB_PASSWORD || '',
-            multipleStatements: true
-        });
-
-        const dbName = process.env.DB_NAME || 'weebook_db';
-        await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-        await tempConn.end();
+        const dbName = process.env.DB_NAME || 'defaultdb';
 
         // Run DDL to create tables if missing
         const schemaSql = `
