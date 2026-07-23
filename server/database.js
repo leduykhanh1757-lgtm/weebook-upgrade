@@ -263,7 +263,7 @@ async function initializeDatabase() {
         // Seed authors & publishers if empty (extracted safely from books)
         const [authorRows] = await pool.query('SELECT COUNT(*) as count FROM authors');
         if (authorRows[0].count === 0) {
-            const [bookAuthors] = await pool.query('SELECT DISTINCT author FROM books WHERE author IS NOT NULL AND author != ""');
+            const [bookAuthors] = await pool.query("SELECT DISTINCT author FROM books WHERE author IS NOT NULL AND author != ''");
             for (const row of bookAuthors) {
                 await pool.query('INSERT IGNORE INTO authors (name) VALUES (?)', [row.author.trim()]);
             }
@@ -271,7 +271,7 @@ async function initializeDatabase() {
 
         const [publisherRows] = await pool.query('SELECT COUNT(*) as count FROM publishers');
         if (publisherRows[0].count === 0) {
-            const [bookPublishers] = await pool.query('SELECT DISTINCT publisher FROM books WHERE publisher IS NOT NULL AND publisher != ""');
+            const [bookPublishers] = await pool.query("SELECT DISTINCT publisher FROM books WHERE publisher IS NOT NULL AND publisher != ''");
             for (const row of bookPublishers) {
                 await pool.query('INSERT IGNORE INTO publishers (name) VALUES (?)', [row.publisher.trim()]);
             }
