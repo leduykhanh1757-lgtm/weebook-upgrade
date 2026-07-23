@@ -1,29 +1,36 @@
 // ========== BOOKSELF SERVER ========== //
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { initializeDatabase } = require('./database');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Catch ALL crashes — prevent silent exit
+process.on('uncaughtException', (err) => {
+    console.error('💥 UNCAUGHT EXCEPTION:', err.message, err.stack);
+});
+process.on('unhandledRejection', (reason) => {
+    console.error('💥 UNHANDLED REJECTION:', reason);
+});
+process.on('exit', (code) => {
+    console.log('🔴 PROCESS EXIT with code:', code);
+});
 
-// Initialize database
-initializeDatabase();
+const app = express();
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logger (debug)
+// Request logger
 app.use((req, res, next) => {
     console.log(`[REQ] ${req.method} ${req.url}`);
     next();
 });
 
-// API health check (first route to ensure it works)
+// API health check (first route)
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.DB_HOST ? 'configured' : 'missing' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), port: PORT });
 });
 
 // API Routes
@@ -42,7 +49,7 @@ try {
     console.error('❌ Failed to load API routes:', err.message);
 }
 
-// Fallback for SPA (only non-API routes)
+// Fallback
 app.get('*', (req, res) => {
     if (!req.path.startsWith('/api/')) {
         res.status(200).json({ message: 'BookSelf API is running. Use /api/* endpoints.' });
@@ -57,9 +64,22 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`\n🚀 BookSelf Server running at http://localhost:${PORT}`);
-    console.log(`📖 API: http://localhost:${PORT}/api/health`);
-    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+// Start server - bind to 0.0.0.0 explicitly for Render
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on 0.0.0.0:${PORT}`);
+    console.log(`📖 Health: http://0.0.0.0:${PORT}/api/health`);
+});
+
+server.on('error', (err) => {
+    console.error('💥 SERVER ERROR:', err.message);
+});
+
+// Heartbeat - log every 30s to confirm process is alive
+setInterval(() => {
+    console.log(`💓 heartbeat - ${new Date().toISOString()} - connections: ${server.listening}`);
+}, 30000);
+
+// Initialize database (async, non-blocking)
+initializeDatabase().catch(err => {
+    console.error('❌ DB init error:', err.message);
 });
