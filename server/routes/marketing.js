@@ -4,11 +4,18 @@ const router = express.Router();
 const { pool } = require('../database');
 const { sendNewsletterWelcomeEmail } = require('../utils/email');
 
+const { getCache, setCache } = require('../utils/cache');
+
 // GET /api/marketing/banners
 router.get('/banners', async (req, res) => {
     try {
+        const cached = getCache('marketing:banners');
+        if (cached) return res.json(cached);
+
         const [banners] = await pool.query('SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order ASC, created_at DESC');
-        res.json({ banners });
+        const result = { banners };
+        setCache('marketing:banners', result, 300);
+        res.json(result);
     } catch (err) {
         console.error('Marketing Banners Error:', err);
         res.status(500).json({ error: 'Lỗi server' });

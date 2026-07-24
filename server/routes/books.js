@@ -2,6 +2,7 @@
 const express = require('express');
 const { pool } = require('../database');
 const { optionalAuth } = require('../middleware/auth');
+const { getCache, setCache, clearCache } = require('../utils/cache');
 
 const router = express.Router();
 
@@ -32,6 +33,12 @@ function parseBookRow(book) {
 // GET /api/books - List books with filters, search, pagination, sort
 router.get('/', async (req, res) => {
     try {
+        const cacheKey = `books:${JSON.stringify(req.query)}`;
+        const cached = getCache(cacheKey);
+        if (cached) {
+            return res.json(cached);
+        }
+
         const {
             page = 1,
             limit = 30,
@@ -102,7 +109,7 @@ router.get('/', async (req, res) => {
 
         const parsedBooks = books.map(parseBookRow);
 
-        res.json({
+        const result = {
             books: parsedBooks,
             pagination: {
                 page: parseInt(page),
@@ -110,7 +117,10 @@ router.get('/', async (req, res) => {
                 total,
                 totalPages: Math.ceil(total / parseInt(limit))
             }
-        });
+        };
+
+        setCache(cacheKey, result, 120);
+        res.json(result);
     } catch (err) {
         console.error('Get books error:', err);
         res.status(500).json({ error: 'Lỗi server!' });
