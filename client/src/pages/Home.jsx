@@ -7,6 +7,7 @@ import banner1Img from '../assets/images/banner1.jpg';
 import banner2Img from '../assets/images/banner2.jpg';
 import banner3Img from '../assets/images/banner3.jpg';
 import smallBannerImg from '../assets/images/small-bannerv2.jpg';
+import glassGlobeImg from '../assets/images/glass-globe.png';
 
 const Home = () => {
   const [featuredBooks, setFeaturedBooks] = useState([]);
@@ -144,7 +145,7 @@ const Home = () => {
             </div>
 
             <div className={styles.promoGraphic}>
-              <img src="/src/assets/images/glass-globe.png" alt="Sách ngoại văn" />
+              <img src={glassGlobeImg} alt="Sách ngoại văn" />
             </div>
           </section>
 
