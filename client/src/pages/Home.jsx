@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import { booksAPI, marketingAPI } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import styles from './Home.module.css';
+import banner1Img from '../assets/images/banner1.jpg';
+import banner2Img from '../assets/images/banner2.jpg';
+import banner3Img from '../assets/images/banner3.jpg';
+import smallBannerImg from '../assets/images/small-bannerv2.jpg';
 
 const Home = () => {
   const [featuredBooks, setFeaturedBooks] = useState([]);
@@ -36,9 +40,9 @@ const Home = () => {
         } else {
           // Fallback static banners if DB is empty
           setBanners([
-            { image_url: '/src/assets/images/banner1.jpg', link_url: '' },
-            { image_url: '/src/assets/images/banner2.jpg', link_url: '' },
-            { image_url: '/src/assets/images/banner3.jpg', link_url: '' }
+            { image_url: banner1Img, link_url: '' },
+            { image_url: banner2Img, link_url: '' },
+            { image_url: banner3Img, link_url: '' }
           ]);
         }
       } catch (err) {
@@ -89,7 +93,7 @@ const Home = () => {
         </div>
         <div className={styles.heroSidebar}>
           <div className={styles.sidebarBanner}>
-            <img src="/src/assets/images/small-bannerv2.jpg" alt="Deal" />
+            <img src={smallBannerImg} alt="Deal" />
           </div>
         </div>
       </section>

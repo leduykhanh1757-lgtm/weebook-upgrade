@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout } from '../store/authSlice';
 import { clearCart } from '../store/cartSlice';
 import { booksAPI } from '../services/api';
@@ -44,6 +44,14 @@ const Header = () => {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   
   const searchRef = useRef(null);
+  const location = useLocation();
+
+  // Clear search when route changes
+  useEffect(() => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchDropdown(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
